@@ -262,9 +262,34 @@ University. The code is released under the Creative Commons Attribution-NonComme
 NORAD-Atomic-Data: use, share and adapt it for non-commercial purposes with credit and
 citation; for commercial use contact the authors.
 
+## Related work
+
+Optimising a structure code's free parameters against NIST with a learned
+surrogate has been done for other codes: Ferreira da Silva et al. (2025) tune the
+Flexible Atomic Code's mean-configuration occupancies for lanthanide and actinide
+ions by Bayesian optimisation of the RMS energy error, and Ma et al. (2024) correct
+the Cowan code's Slater and spin-orbit parameters for Yb I with ElasticNet and
+XGBoost models. AUTOSTRUCTURE can minimise an energy functional with respect to its
+λ internally (Badnell 2011), which is variational rather than a fit to observation.
+ssopt differs in the code and parameters (SUPERSTRUCTURE λ_nl), in modelling every
+level energy rather than the scalar error, in building the configuration list and
+the level pairing from the NIST list with no per-ion input, and in testing the
+result against measured lifetimes.
+
+* R. Ferreira da Silva, A. Flörs, L. Leitão, J. P. Marques, J. M. Sampaio,
+  G. Martínez-Pinedo, Systematic Bayesian Optimization for Atomic Structure
+  Calculations of Heavy Elements, arXiv:2502.13250 (2025),
+  https://arxiv.org/abs/2502.13250
+* K. Ma, C. Yang, J. Zhang, Y. Li, G. Jiang, J. Chai, Machine Learning-Assisted
+  Hartree-Fock Approach for Energy Level Calculations in the Neutral Ytterbium Atom,
+  Entropy 26, 962 (2024), https://doi.org/10.3390/e26110962
+* N. R. Badnell, A Breit-Pauli distorted wave implementation for AUTOSTRUCTURE,
+  Comput. Phys. Commun. 182, 1528 (2011)
+
 ## References
 
 * W. Eissner, M. Jones, H. Nussbaumer, Comput. Phys. Commun. 8, 270 (1974)
 * H. Nussbaumer, P. J. Storey, Astron. Astrophys. 64, 139 (1978)
 * NIST Atomic Spectra Database, https://physics.nist.gov/asd
 * NORAD-Atomic-Data, S. N. Nahar, https://norad.astronomy.osu.edu
+  
