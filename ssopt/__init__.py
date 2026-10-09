@@ -6,4 +6,4 @@ Pipeline:  ion → CI configs → ssin → structx (energies only) → match to 
 
 All energies are in Rydberg unless a function name says otherwise.
 """
-__version__ = "0.6.9"
+__version__ = "0.6.10"

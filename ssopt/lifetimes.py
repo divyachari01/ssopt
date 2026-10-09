@@ -169,13 +169,22 @@ def compare(ions, workdir, bench_path):
         else:
             t = ts[0]
         ratio = t / texp if math.isfinite(t) else math.inf
-        out.append(ratio)
+        out.append((ratio, ion.charge, texp))
         print(f"{name:<9}{lab:<30}{fmt_tau(texp):>10} {unc:>11}  {fmt_tau(t):>10} {ratio:7.2f}  {ref}")
+
+    def stats(label, sel):
+        r = sorted(x for x, _, _ in sel if math.isfinite(x))
+        if not r:
+            return
+        print(f"{label:<58}{len(r):4d} values: median SS/exp {r[len(r) // 2]:.2f}, "
+              f"{100 * sum(abs(math.log10(x)) < math.log10(1.2) for x in r) / len(r):3.0f}% within 20%, "
+              f"{100 * sum(abs(math.log10(x)) < math.log10(1.5) for x in r) / len(r):3.0f}% within 50%")
     if out:
-        r = sorted(out)
-        print(f"\n{len(out)} levels: median SS/exp = {r[len(r) // 2]:.2f}, "
-              f"{100 * sum(abs(math.log10(x)) < math.log10(1.2) for x in r) / len(r):.0f}% within 20%, "
-              f"{100 * sum(abs(math.log10(x)) < math.log10(1.5) for x in r) / len(r):.0f}% within 50%")
+        print()
+        stats("all", out)
+        stats("charge >= 3, forbidden lines (tau >= 1 us)", [x for x in out if x[1] >= 3 and x[2] >= 1e-6])
+        stats("charge >= 3, allowed lines (tau < 1 us)", [x for x in out if x[1] >= 3 and x[2] < 1e-6])
+        stats("neutral and singly ionised", [x for x in out if x[1] < 2])
 
 
 def main(argv=None):
