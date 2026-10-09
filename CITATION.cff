@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use ssopt in your work, please cite it as below. A journal paper describing the method is in preparation; this entry will be updated when it appears."
+title: "ssopt: automated tuning of Thomas-Fermi scaling parameters for SUPERSTRUCTURE"
+type: software
+version: 0.6.8
+date-released: 2026-10-09
+authors:
+  - family-names: Chari
+    given-names: Divya
+    affiliation: "Department of Physics, The Ohio State University"
+repository-code: "https://github.com/YOUR-USERNAME/ssopt"
+license: MIT
+keywords:
+  - atomic structure
+  - SUPERSTRUCTURE
+  - Thomas-Fermi scaling parameters
+  - Gaussian process
+  - surrogate optimisation
+  - NIST
+  - NORAD
+abstract: "Surrogate-model optimiser that tunes the lambda_nl scaling parameters of the atomic structure code SUPERSTRUCTURE against NIST energy levels with no per-ion input, makes level labels consistent with NIST where the energies decide it, checks A-values and level lifetimes against NIST, NORAD and measured values, and writes NORAD-format tables."

@@ -239,6 +239,19 @@ benchmarks/lifetimes_exp.csv   measured lifetimes for ssopt.lifetimes --bench
 ions_fe.txt, ions_norad.txt   ion lists used for the sweeps
 ```
 
+## Citing
+
+If you use this code or the tuned data in your work, please cite it. GitHub's
+"Cite this repository" button (from `CITATION.cff`) gives the reference; until the
+method paper is out, cite the software:
+
+> D. Chari, *ssopt: automated tuning of Thomas-Fermi scaling parameters for
+> SUPERSTRUCTURE*, version 0.6.8 (2026), https://github.com/YOUR-USERNAME/ssopt
+
+and SUPERSTRUCTURE itself (Eissner, Jones & Nussbaumer 1974; Nussbaumer & Storey
+1978). The code is released under the MIT license (see `LICENSE`): use, copy and
+modify freely, keep the copyright notice, no warranty.
+
 ## References
 
 * W. Eissner, M. Jones, H. Nussbaumer, Comput. Phys. Commun. 8, 270 (1974)
