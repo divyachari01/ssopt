@@ -5,11 +5,11 @@ N I,2s.2p4,4P,term,7.0,0.2,ns,n/s,Berry 1971 JOSA 61 947; https://arxiv.org/pdf/
 N I,2s.2p4,4P,term,7.2,0.7,ns,n/s,Lawrence & Savage 1966 Phys. Rev. 141 67; https://arxiv.org/pdf/2302.00228
 N I,2s2.2p2.(1D).3s,2D,term,2.6,0.1,ns,n/s,Berry 1971 JOSA 61 947; https://arxiv.org/pdf/2302.00228
 N I,2s2.2p2.(1D).3s,2D,term,2.27,0.3,ns,n/s,Dumont 1974 JQSRT 14 1127; https://arxiv.org/pdf/2302.00228
-N I,2s2.2p2.(3P).3p,4D,term,44,2,ns,time-resolved laser (Lund),Bengtsson 1992 Phys. Rev. A 45 2712; Li et al. 2023 Table 3 https://arxiv.org/pdf/2302.00228
-N I,2s2.2p2.(3P).3p,4D,term,43,3,ns,n/s,Copeland 1987 J. Chem. Phys. 86 4876; https://arxiv.org/pdf/2302.00228
-N I,2s2.2p2.(3P).3p,4P,term,55,5,ns,n/s,Bromander 1978 Phys. Scr. 17 119; https://arxiv.org/pdf/2302.00228
-N I,2s2.2p2.(3P).3p,4S,term,26.0,1.5,ns,n/s,Bengtsson 1992 Phys. Rev. A 45 2712; https://arxiv.org/pdf/2302.00228
-N I,2s2.2p2.(3P).3p,4S,term,23.3,2.3,ns,n/s,Catherinot & Sy 1979 Phys. Rev. A 20 1511; https://arxiv.org/pdf/2302.00228
+N I,2s2.2p2.(3P).3p,4D*,term,44,2,ns,time-resolved laser (Lund),Bengtsson 1992 Phys. Rev. A 45 2712; Li et al. 2023 Table 3 https://arxiv.org/pdf/2302.00228
+N I,2s2.2p2.(3P).3p,4D*,term,43,3,ns,n/s,Copeland 1987 J. Chem. Phys. 86 4876; https://arxiv.org/pdf/2302.00228
+N I,2s2.2p2.(3P).3p,4P*,term,55,5,ns,n/s,Bromander 1978 Phys. Scr. 17 119; https://arxiv.org/pdf/2302.00228
+N I,2s2.2p2.(3P).3p,4S*,term,26.0,1.5,ns,n/s,Bengtsson 1992 Phys. Rev. A 45 2712; https://arxiv.org/pdf/2302.00228
+N I,2s2.2p2.(3P).3p,4S*,term,23.3,2.3,ns,n/s,Catherinot & Sy 1979 Phys. Rev. A 20 1511; https://arxiv.org/pdf/2302.00228
 N I,2s2.2p2.(3P).3s,2P,term,2.2,0.1,ns,n/s,Berry 1971 JOSA 61 947; https://arxiv.org/pdf/2302.00228
 N I,2s2.2p2.(3P).3s,4P,term,2.4,0.1,ns,n/s,Berry 1971 JOSA 61 947; https://arxiv.org/pdf/2302.00228
 N I,2s2.2p2.(3P).3s,4P,term,2.5,0.3,ns,n/s,Lawrence & Savage 1966 Phys. Rev. 141 67; https://arxiv.org/pdf/2302.00228

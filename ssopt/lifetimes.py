@@ -102,8 +102,9 @@ def load_run(workdir, ion):
 def _norm_cfg(s: str) -> str:
     """'2s2.2p5.3s' / '2s2 2p5 3s1' / '2s2.2p3.(4S*).3s' -> canonical '2s2 2p5 3s1' (parent
     terms in parentheses and any trailing comment after a space are ignored)."""
-    s = re.sub(r"\([^)]*\)", "", s.strip().split(" ")[0])
-    parts = re.findall(r"(\d)([spdfghik])(\d*)", s.lower())
+    s = re.sub(r"\([^)]*\)", "", s)                       # drop parent terms / comments
+    parts = re.findall(r"\b(\d)([spdfghik])(\d*)\b", s.lower())
+    parts.sort(key=lambda t: (int(t[0]), "spdfghik".index(t[1])))
     return " ".join(f"{n}{l}{occ or 1}" for n, l, occ in parts)
 
 
