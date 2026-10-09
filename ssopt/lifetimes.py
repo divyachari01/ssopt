@@ -35,7 +35,7 @@ _ROW2 = re.compile(r"^\s*\d+\s+(?:E0:)?\s*(\d+)\s+(\d+)\s+" + _E + r"\s+" + _E) 
 _E3 = re.compile(r"^\s*E3:\s*(\d+)\s+(\d+)\s+" + _E + r"(?:\s+AM2\s*=\s*" + _E + ")?")  # E3: K KP AE3 [AM2 = x]
 _M2 = re.compile(r"^\s*(\d+)\s+(\d+)\s+AM2\s*=\s*" + _E)                                # K KP AM2 = x
 UNIT = {"fs": 1e-15, "ps": 1e-12, "ns": 1e-9, "us": 1e-6, "ms": 1e-3, "s": 1.0}
-LN = "SPDFGHIK"
+LN = "SPDFGHIKLMNOQRTUVWXYZ"
 
 
 def parse_rates(text: str) -> dict[tuple[int, int], dict[str, float]]:
