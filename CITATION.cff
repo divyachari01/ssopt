@@ -7,13 +7,14 @@ date-released: 2026-10-09
 authors:
   - family-names: Chari
     given-names: Divya
-    affiliation: "Department of Physics, The Ohio State University"
+    affiliation: "Department of Physics, The Ohio State University, Columbus, OH 43210, United States of America"
   - family-names: Nahar
     given-names: Sultana N.
-    affiliation: "Department of Astronomy, The Ohio State University"
+    affiliation: "Department of Astronomy, The Ohio State University, Columbus, OH 43210, United States of America"
   - family-names: Pradhan
     given-names: Anil K.
-    affiliation: "Department of Astronomy, The Ohio State University"
+    affiliation: "Department of Astronomy, The Ohio State University, Columbus, OH 43210, United States of America"
+                "Chemical Physics Program, The Ohio State University, Columbus, OH 43210, United States of America"
 repository-code: "https://github.com/divyachari01/ssopt"
 license: CC-BY-NC-4.0
 keywords:
