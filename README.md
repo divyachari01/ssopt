@@ -171,6 +171,20 @@ so they stay consistent). `python swaps.py work` lists every relabelled level
 across all ions with its NIST partner for inspection. On the 96-ion set the
 rule changes 10 levels in 5 ions (the five named above), all verified by hand.
 
+
+## Lifetimes against experiment
+
+What laboratories measure is the lifetime of a level, τ = 1/ΣA over every decay
+channel, so the experimental test of the A-values is on lifetimes.
+`python -m ssopt.lifetimes "Fe XVII" --workdir work` sums every rate SUPERSTRUCTURE
+prints in the IC radiative section (E1 and the E3/M2 rows in part 1, E2 and M1 in
+part 2) and lists τ per level with the channel breakdown.
+`--bench benchmarks/lifetimes_exp.csv` compares with measured values; the file
+ships with the Fe XV to XVII entries from Träbert's 2023 review (Atoms 11, 85) and
+is meant to be extended from the storage-ring and EBIT literature (columns: ion,
+config outside the closed core in NIST style, term with parity star, J, τ, unc,
+unit, method, reference). Run `--relabel-ssout` first so level names match.
+
 ## Workflow on a cluster (OSC Cardinal)
 
 ```bash
@@ -219,6 +233,7 @@ slurm/    ion.slurm full.slurm sweep.sh verify.slurm optimize.slurm
 tests/    python -m pytest tests/   (needs data/nist_Si_I_levels_ry.csv: run fetch "Si I" first)
 ref/      ssin.cardinal (reference deck), ssout.si1.levels (reference output, test fixture)
 swaps.py  list relabelled levels with their NIST partners
+benchmarks/lifetimes_exp.csv   measured lifetimes for ssopt.lifetimes --bench
 ions_fe.txt, ions_norad.txt   ion lists used for the sweeps
 ```
 
