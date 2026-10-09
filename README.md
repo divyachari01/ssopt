@@ -246,7 +246,7 @@ If you use this code or the tuned data in your work, please cite it. GitHub's
 method paper is out, cite the software:
 
 > D. Chari, *ssopt: automated tuning of Thomas-Fermi scaling parameters for
-> SUPERSTRUCTURE*, version 0.6.10 (2026), https://github.com/YOUR-USERNAME/ssopt
+> SUPERSTRUCTURE*, version 0.6.10 (2026), https://github.com/divyachari01/ssopt
 
 and SUPERSTRUCTURE itself (Eissner, Jones & Nussbaumer 1974; Nussbaumer & Storey
 1978). The code is released under the MIT license (see `LICENSE`): use, copy and
