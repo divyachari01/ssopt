@@ -180,8 +180,10 @@ channel, so the experimental test of the A-values is on lifetimes.
 prints in the IC radiative section (E1 and the E3/M2 rows in part 1, E2 and M1 in
 part 2) and lists τ per level with the channel breakdown.
 `--bench benchmarks/lifetimes_exp.csv` compares with measured values; the file
-ships with the Fe XV to XVII entries from Träbert's 2023 review (Atoms 11, 85) and
-is meant to be extended from the storage-ring and EBIT literature (columns: ion,
+ships with 139 measured values for 22 ions (storage ring, EBIT, ion trap, beam-foil,
+LIF), each with the URL it was read from; rows with J = term are J-unresolved
+measurements, compared with the g-weighted mean over the term. Extend it from the
+literature as needed (columns: ion,
 config outside the closed core in NIST style, term with parity star, J, τ, unc,
 unit, method, reference). Run `--relabel-ssout` first so level names match.
 

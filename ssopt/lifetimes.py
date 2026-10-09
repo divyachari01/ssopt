@@ -100,7 +100,9 @@ def load_run(workdir, ion):
 
 
 def _norm_cfg(s: str) -> str:
-    """'2s2.2p5.3s' / '2s2 2p5 3s1' / '2s22p53s' -> canonical '2s2 2p5 3s1'."""
+    """'2s2.2p5.3s' / '2s2 2p5 3s1' / '2s2.2p3.(4S*).3s' -> canonical '2s2 2p5 3s1' (parent
+    terms in parentheses and any trailing comment after a space are ignored)."""
+    s = re.sub(r"\([^)]*\)", "", s.strip().split(" ")[0])
     parts = re.findall(r"(\d)([spdfghik])(\d*)", s.lower())
     return " ".join(f"{n}{l}{occ or 1}" for n, l, occ in parts)
 
@@ -126,7 +128,7 @@ def compare(ions, workdir, bench_path):
     want = {b["ion"].strip() for b in rows}
     cache = {}
     out = []
-    print(f"\n{'ion':<9}{'level':<28}{'tau_exp':>12} {'unc':>7}  {'tau_SS':>10} {'SS/exp':>7}  method / reference")
+    print(f"\n{'ion':<9}{'level':<30}{'tau_exp':>10} {'unc':>11}  {'tau_SS':>10} {'SS/exp':>7}  method | reference")
     for b in rows:
         name = b["ion"].strip()
         if ions and name not in ions:
@@ -143,21 +145,31 @@ def compare(ions, workdir, bench_path):
         if cache[name] is None:
             continue
         cfgs, levels, tau = cache[name]
-        bc, bt, bj = _norm_cfg(b["config"]), b["term"].strip().upper(), float(b["J"])
+        if not b.get("tau", "").strip():
+            continue
+        bc, bt = _norm_cfg(b["config"]), b["term"].strip().upper()
+        jtxt = b["J"].strip().lower()
+        whole_term = jtxt in ("", "term")          # one lifetime for the whole term (J unresolved)
         cand = [lv for lv in levels
                 if _norm_cfg(level_label(lv, cfgs, ion.core)[0]) == bc
-                and level_label(lv, cfgs, ion.core)[1].upper() == bt and abs(lv.twoJ / 2 - bj) < 1e-6]
+                and level_label(lv, cfgs, ion.core)[1].upper() == bt
+                and (whole_term or abs(lv.twoJ / 2 - float(jtxt)) < 1e-6)]
         texp = float(b["tau"]) * UNIT[b["unit"].strip()]
         unc = f"{b['unc']}".strip()
-        lab = f"{b['config']} {b['term']} J={b['J']}"
+        lab = f"{b['config'].split(' ')[0]} {b['term']} " + ("(term)" if whole_term else f"J={b['J']}")
+        ref = f"{b.get('method', '')} | {b.get('reference', '')}"[:90]
         if not cand:
-            print(f"{name:<9}{lab:<28}{fmt_tau(texp):>12} {unc:>7}  {'no such level':>10}          {b.get('method','')} {b.get('reference','')}")
+            print(f"{name:<9}{lab:<30}{fmt_tau(texp):>10} {unc:>11}  {'not in deck':>10}          {ref}")
             continue
-        lv = cand[0]
-        t = tau.get(lv.K, (math.inf, 0, {}))[0]
+        ts = [tau.get(lv.K, (math.inf, 0, {}))[0] for lv in cand]
+        if whole_term:            # g-weighted mean of the term's levels, as a J-unresolved measurement sees it
+            g = [lv.twoJ + 1 for lv in cand]
+            t = sum(gi * ti for gi, ti in zip(g, ts)) / sum(g) if all(math.isfinite(x) for x in ts) else math.inf
+        else:
+            t = ts[0]
         ratio = t / texp if math.isfinite(t) else math.inf
         out.append(ratio)
-        print(f"{name:<9}{lab:<28}{fmt_tau(texp):>12} {unc:>7}  {fmt_tau(t):>10} {ratio:7.2f}  {b.get('method','')} {b.get('reference','')}")
+        print(f"{name:<9}{lab:<30}{fmt_tau(texp):>10} {unc:>11}  {fmt_tau(t):>10} {ratio:7.2f}  {ref}")
     if out:
         r = sorted(out)
         print(f"\n{len(out)} levels: median SS/exp = {r[len(r) // 2]:.2f}, "

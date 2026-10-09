@@ -1,15 +1,140 @@
 ion,config,term,J,tau,unc,unit,method,reference
-Fe XVII,2s2.2p5.3s,3P*,2,4.90,+0.23/-0.07,us,LLNL EBIT,"Traebert 2023 Atoms 11 85 Tab.2 ref[87]"
-Fe XVII,2s2.2p5.3s,3P*,0,69,7,ms,LLNL EBIT: decay induced by the trap B-field; field-free SS value not comparable,"Traebert 2023 Atoms 11 85 Tab.2 ref[88]; theory 62.5 ms"
-Fe XVII,2s2.2p5.3d,1P*,1,43.7,3,fs,from measured f and line width (3C),"Traebert 2023 Atoms 11 85 Tab.2 ref[86]; theory 44 fs"
-Fe XVII,2s2.2p5.3d,3D*,1,175,,fs,from measured f and line width (3D),"Traebert 2023 Atoms 11 85 Tab.2 ref[86]; theory 166 fs"
-Fe XVI,3p,2P*,1.5,125,10,ps,beam-foil (cascade model),"Traebert 2023 Atoms 11 85 Tab.2 ref[50]"
-Fe XVI,3p,2P*,1.5,138,9,ps,beam-foil (ANDC),"Traebert 2023 Atoms 11 85 Tab.2 ref[90]"
-Fe XVI,3p,2P*,0.5,155,10,ps,beam-foil (cascade model),"Traebert 2023 Atoms 11 85 Tab.2 ref[50]"
-Fe XVI,3p,2P*,0.5,167,11,ps,beam-foil (ANDC),"Traebert 2023 Atoms 11 85 Tab.2 ref[90]"
-Fe XVI,3d,2D,1.5,55,4,ps,beam-foil,"Traebert 2023 Atoms 11 85 Tab.2 ref[50]"
-Fe XVI,3d,2D,1.5,51,11,ps,beam-foil,"Traebert 2023 Atoms 11 85 Tab.2 ref[90]"
-Fe XVI,3d,2D,2.5,62,5,ps,beam-foil,"Traebert 2023 Atoms 11 85 Tab.2 ref[50]"
-Fe XVI,3d,2D,2.5,69,10,ps,beam-foil,"Traebert 2023 Atoms 11 85 Tab.2 ref[90]"
-Fe XV,3s.3p,1P*,1,47,5,ps,beam-foil (cascade model),"Traebert 2023 Atoms 11 85 Tab.2 ref[91]"
-Fe XV,3s.3p,1P*,1,42,3,ps,beam-foil (ANDC),"Traebert 2023 Atoms 11 85 Tab.2 ref[90]"
+N I,2s.2p4,4P,term,7.3,0.7,ns,n/s,Dumont 1974 JQSRT 14 1127; https://arxiv.org/pdf/2302.00228
+N I,2s.2p4,4P,term,7.4,0.4,ns,n/s,Smith 1970 Phys. Scr. 2 211; https://arxiv.org/pdf/2302.00228
+N I,2s.2p4,4P,term,7.0,0.2,ns,n/s,Berry 1971 JOSA 61 947; https://arxiv.org/pdf/2302.00228
+N I,2s.2p4,4P,term,7.2,0.7,ns,n/s,Lawrence & Savage 1966 Phys. Rev. 141 67; https://arxiv.org/pdf/2302.00228
+N I,2s2.2p2.(1D).3s,2D,term,2.6,0.1,ns,n/s,Berry 1971 JOSA 61 947; https://arxiv.org/pdf/2302.00228
+N I,2s2.2p2.(1D).3s,2D,term,2.27,0.3,ns,n/s,Dumont 1974 JQSRT 14 1127; https://arxiv.org/pdf/2302.00228
+N I,2s2.2p2.(3P).3p,4D,term,44,2,ns,time-resolved laser (Lund),Bengtsson 1992 Phys. Rev. A 45 2712; Li et al. 2023 Table 3 https://arxiv.org/pdf/2302.00228
+N I,2s2.2p2.(3P).3p,4D,term,43,3,ns,n/s,Copeland 1987 J. Chem. Phys. 86 4876; https://arxiv.org/pdf/2302.00228
+N I,2s2.2p2.(3P).3p,4P,term,55,5,ns,n/s,Bromander 1978 Phys. Scr. 17 119; https://arxiv.org/pdf/2302.00228
+N I,2s2.2p2.(3P).3p,4S,term,26.0,1.5,ns,n/s,Bengtsson 1992 Phys. Rev. A 45 2712; https://arxiv.org/pdf/2302.00228
+N I,2s2.2p2.(3P).3p,4S,term,23.3,2.3,ns,n/s,Catherinot & Sy 1979 Phys. Rev. A 20 1511; https://arxiv.org/pdf/2302.00228
+N I,2s2.2p2.(3P).3s,2P,term,2.2,0.1,ns,n/s,Berry 1971 JOSA 61 947; https://arxiv.org/pdf/2302.00228
+N I,2s2.2p2.(3P).3s,4P,term,2.4,0.1,ns,n/s,Berry 1971 JOSA 61 947; https://arxiv.org/pdf/2302.00228
+N I,2s2.2p2.(3P).3s,4P,term,2.5,0.3,ns,n/s,Lawrence & Savage 1966 Phys. Rev. 141 67; https://arxiv.org/pdf/2302.00228
+N I,2s2.2p2.(3P).4s,2P,term,6.2,,ns,n/s,Dumont 1974 JQSRT 14 1127; https://arxiv.org/pdf/2302.00228
+O I,2s2.2p3.(2D*).3s,1D*,2,1.77,0.14,ns,beam-foil,Smith 1971 ApJ 165 217; https://arxiv.org/pdf/2304.02310
+O I,2s2.2p3.(2D*).3s,1D*,2,2.01,0.12,ns,beam-foil,Pinnington 1974 Can. J. Phys. 52 1961; https://arxiv.org/pdf/2304.02310
+O I,2s2.2p3.(2D*).3s,3D*,term,3.94,0.22,ns,beam-foil,Smith 1971 ApJ 165 217; https://arxiv.org/pdf/2304.02310
+O I,2s2.2p3.(2D*).3s,3D*,term,5.0,0.4,ns,beam-foil,Pinnington 1974 Can. J. Phys. 52 1961; https://arxiv.org/pdf/2304.02310
+O I,2s2.2p3.(4S*).3p,3P,term,36,4,ns,time-resolved laser,Kröll 1985 Phys. Rev. Lett. 55 284; https://arxiv.org/pdf/2304.02310
+O I,2s2.2p3.(4S*).3p,3P,term,39.1,1.4,ns,two-photon LIF,Bischel 1981 Chem. Phys. Lett. 82 85; https://arxiv.org/pdf/2304.02310
+O I,2s2.2p3.(4S*).3p,3P,term,40,3,ns,high-frequency deflection,Bromander 1978 Phys. Scr. 17 119; https://arxiv.org/pdf/2304.02310
+O I,2s2.2p3.(4S*).3s,3S*,1,1.82,0.05,ns,n/s,Lawrence 1970 Phys. Rev. A 2 397; https://arxiv.org/pdf/2304.02310
+O I,2s2.2p3.(4S*).3s,3S*,1,1.79,0.17,ns,beam-foil,Smith 1971 ApJ 165 217; https://arxiv.org/pdf/2304.02310
+O I,2s2.2p3.(4S*).3s,3S*,1,1.70,0.15,ns,n/s,Martinson 1971 JOSA 61 519; https://arxiv.org/pdf/2304.02310
+O I,2s2.2p3.(4S*).3s,5S*,2,180,5,us,time-of-flight,Nowak 1978 Phys. Rev. A 17 1921; Li et al. 2023 A&A 674 A54 Table 2 https://arxiv.org/pdf/2304.02310
+O I,2s2.2p3.(4S*).3s,5S*,2,185,10,us,n/s,Johnson 1972 Phys. Rev. A 5 2688; https://arxiv.org/pdf/2304.02310
+O I,2s2.2p3.(4S*).3s,5S*,2,170,25,us,time-of-flight,Wells & Zipf 1974 Phys. Rev. A 9 568; https://arxiv.org/pdf/2304.02310
+O I,2s2.2p3.(4S*).4d,3D*,term,23,3,ns,time-resolved laser,Kröll 1985 Phys. Rev. Lett. 55 284; https://arxiv.org/pdf/2304.02310
+O I,2s2.2p3.(4S*).4d,3D*,term,20,3,ns,phase-shift,Brooks 1977 ApJ 214 328; https://arxiv.org/pdf/2304.02310
+O I,2s2.2p3.(4S*).4d,5D*,term,96,4,ns,high-frequency deflection,Bromander 1978 Phys. Scr. 17 119; https://arxiv.org/pdf/2304.02310
+O I,2s2.2p3.(4S*).4d,5D*,term,95,9,ns,n/s,Day 1981 JOSA 71 851; https://arxiv.org/pdf/2304.02310
+O I,2s2.2p3.(4S*).4p,3P,term,153,10,ns,high-frequency deflection,Bromander 1978 Phys. Scr. 17 119; https://arxiv.org/pdf/2304.02310
+O I,2s2.2p3.(4S*).4p,3P,term,161,19,ns,n/s,Day 1981 JOSA 71 851; https://arxiv.org/pdf/2304.02310
+O I,2s2.2p3.(4S*).4p,5P,term,193,10,ns,high-frequency deflection,Bromander 1978 Phys. Scr. 17 119; https://arxiv.org/pdf/2304.02310
+O I,2s2.2p3.(4S*).4p,5P,term,194,19,ns,n/s,Day 1981 JOSA 71 851; https://arxiv.org/pdf/2304.02310
+O I,2s2.2p3.(4S*).4s,3S*,1,4.0,0.6,ns,phase-shift,Brooks 1977 ApJ 214 328; https://arxiv.org/pdf/2304.02310
+Ne I,2s2.2p5.3s,3P*,2,14.73,0.14,s,fluorescence decay in a magneto-optical trap,Zinner et al. 2003 Phys. Rev. A 67 010501(R); https://arxiv.org/pdf/1211.4240
+Mg I,3p2,3P,term,2.0,0.2,ns,LIF,Aldenius et al. 2007 A&A 461 767 https://arxiv.org/pdf/astro-ph/0610033
+Mg I,3s.3d,1D,2,81,6,ns,laser (Lund),Jönsson 1984 Phys. Rev. A 30 2429; https://arxiv.org/pdf/1611.07000
+Mg I,3s.3d,3D,term,5.9,0.4,ns,LIF (fine structure unresolved),Aldenius et al. 2007 A&A 461 767 https://arxiv.org/pdf/astro-ph/0610033
+Mg I,3s.3d,3D,term,6.6,0.5,ns,beam-foil,Andersen 1972 ApJ 178 577; https://arxiv.org/pdf/astro-ph/0610033
+Mg I,3s.4d,1D,2,57,3,ns,laser (Lund),Jönsson 1984 Phys. Rev. A 30 2429; https://arxiv.org/pdf/1611.07000
+Mg I,3s.4d,3D,term,17.6,1.2,ns,LIF (fine structure unresolved),Aldenius et al. 2007 A&A 461 767 https://arxiv.org/pdf/astro-ph/0610033
+Mg I,3s.4d,3D,term,15.6,0.9,ns,laser,Kwiatkowski 1980 Z. Phys. A 294 109; https://arxiv.org/pdf/astro-ph/0610033
+Mg I,3s.4d,3D,term,13.5,1.0,ns,beam-foil,Andersen 1972 ApJ 178 577; https://arxiv.org/pdf/astro-ph/0610033
+Mg I,3s.4p,1P*,1,13.4,0.4,ns,laser (Lund),Larsson & Svanberg 1993 Z. Phys. D 25 127; https://arxiv.org/pdf/1611.07000
+Mg I,3s.4s,1S,0,47,3,ns,laser (Lund),Jönsson 1984 Phys. Rev. A 30 2429; Pehlivan Rhodin 2017 Table 1 https://arxiv.org/pdf/1611.07000
+Mg I,3s.4s,3S,1,11.5,1.0,ns,LIF,Aldenius et al. 2007 A&A 461 767 https://arxiv.org/pdf/astro-ph/0610033
+Mg I,3s.4s,3S,1,9.7,0.6,ns,laser,Kwiatkowski 1980 Z. Phys. A 294 109; https://arxiv.org/pdf/astro-ph/0610033
+Mg I,3s.4s,3S,1,10.1,0.8,ns,beam-foil,Andersen 1972 ApJ 178 577; https://arxiv.org/pdf/astro-ph/0610033
+Al I,3s2.3d,2D,1.5,14.0,0.2,ns,laser excitation,Buurman 1986 A&A 164 224; https://www.aanda.org/articles/aa/full_html/2019/01/aa33764-18/T6.html
+Al I,3s2.3d,2D,2.5,14.0,0.2,ns,laser excitation,Buurman 1986 A&A 164 224; https://www.aanda.org/articles/aa/full_html/2019/01/aa33764-18/T6.html
+Al I,3s2.4d,2D,1.5,29.5,0.7,ns,laser excitation (3d/4d mixing: label as in Papoulia 2019),Buurman 1986 A&A 164 224; https://www.aanda.org/articles/aa/full_html/2019/01/aa33764-18/T6.html
+Al I,3s2.4d,2D,2.5,29.5,0.7,ns,laser excitation (3d/4d mixing: label as in Papoulia 2019),Buurman 1986 A&A 164 224; https://www.aanda.org/articles/aa/full_html/2019/01/aa33764-18/T6.html
+Al I,3s2.4p,2P*,0.5,65,2,ns,laser,Buurman & Donszelmann 1990 A&A 227 289; Burheim 2023 A&A 672 A197 Table 1 https://www.aanda.org/articles/aa/full_html/2023/04/aa45394-22/T1.html
+Al I,3s2.4p,2P*,1.5,60.5,0.9,ns,laser,Buurman & Donszelmann 1990 A&A 227 289; https://www.aanda.org/articles/aa/full_html/2023/04/aa45394-22/T1.html
+Al I,3s2.4s,2S,0.5,6.85,0.06,ns,laser excitation,Buurman 1986 A&A 164 224; Papoulia 2019 A&A 621 A16 Table 6 https://www.aanda.org/articles/aa/full_html/2019/01/aa33764-18/T6.html
+Si I,3s.3p3,3D*,1,22.0,1.1,ns,LIF,O'Brian & Lawler 1991; https://www.aanda.org/articles/aa/full_html/2024/02/aa45686-22/T4.html
+Si I,3s.3p3,3D*,2,22.0,1.1,ns,LIF,O'Brian & Lawler 1991; https://www.aanda.org/articles/aa/full_html/2024/02/aa45686-22/T4.html
+Si I,3s.3p3,3D*,3,22.0,1.1,ns,LIF,O'Brian & Lawler 1991; https://www.aanda.org/articles/aa/full_html/2024/02/aa45686-22/T4.html
+Si I,3s2.3p.3d,1D*,2,22.5,1.1,ns,LIF,O'Brian & Lawler 1991; https://www.aanda.org/articles/aa/full_html/2024/02/aa45686-22/T4.html
+Si I,3s2.3p.4s,1P*,1,4.3,0.2,ns,LIF,O'Brian & Lawler 1991; https://www.aanda.org/articles/aa/full_html/2024/02/aa45686-22/T4.html
+Si I,3s2.3p.4s,3P*,0,4.5,0.2,ns,LIF,O'Brian & Lawler 1991; Pehlivan Rhodin 2024 A&A 682 A184 Table B.2 https://www.aanda.org/articles/aa/full_html/2024/02/aa45686-22/T4.html
+Si I,3s2.3p.4s,3P*,1,4.5,0.2,ns,LIF,O'Brian & Lawler 1991; https://www.aanda.org/articles/aa/full_html/2024/02/aa45686-22/T4.html
+Si I,3s2.3p.4s,3P*,2,4.5,0.2,ns,LIF,O'Brian & Lawler 1991; https://www.aanda.org/articles/aa/full_html/2024/02/aa45686-22/T4.html
+Si II,3s.3p2,2D,1.5,420,42,ns,time-resolved LIF,Bergeson & Lawler 1993; https://www.aanda.org/articles/aa/full_html/2024/02/aa45686-22/T8.html
+Si II,3s.3p2,2D,2.5,447,45,ns,time-resolved LIF,Bergeson & Lawler 1993; https://www.aanda.org/articles/aa/full_html/2024/02/aa45686-22/T8.html
+Si II,3s.3p2,4P,0.5,104,16,us,ion trap,"Calamai, Smith, Bergeson 1993 ApJ 415 L59; https://www.aanda.org/articles/aa/full_html/2024/02/aa45686-22/T8.html"
+Si II,3s.3p2,4P,1.5,811,77,us,ion trap,"Calamai, Smith, Bergeson 1993 ApJ 415 L59; https://www.aanda.org/articles/aa/full_html/2024/02/aa45686-22/T8.html"
+Si II,3s.3p2,4P,2.5,406,33,us,ion trap,"Calamai, Smith, Bergeson 1993 ApJ 415 L59; https://www.aanda.org/articles/aa/full_html/2024/02/aa45686-22/T8.html"
+Si II,3s2.4f,2F*,term,3.4,0.3,ns,beam-foil,Bashkin 1980 Phys. Scr. 21 820; https://arxiv.org/pdf/1405.0184
+Si II,3s2.4p,2P*,term,9.1,0.5,ns,beam-foil,Bashkin 1980 Phys. Scr. 21 820; https://arxiv.org/pdf/1405.0184
+Si II,3s2.4s,2S,0.5,0.91,0.04,ns,beam-foil,"Schectman, Povolny, Curtis 1998 ApJ 504 921; https://arxiv.org/pdf/1405.0184"
+S IX,2s2.2p4,1D,2,13.79,0.05,ms,storage ring (TSR),Träbert 2012 Phys. Rev. A 85 052508; TSR table https://people.astro.ruhr-uni-bochum.de/traebert/TSR_lifetime_table.html
+S X,2s2.2p3,2P*,0.5,5.20,0.15,ms,storage ring (TSR),Träbert 2012 Phys. Rev. A 85 052508; TSR table https://people.astro.ruhr-uni-bochum.de/traebert/TSR_lifetime_table.html
+S X,2s2.2p3,2P*,0.5,5.36,0.10,ms,storage ring (TSR),Träbert et al. 2000 Phys. Rev. A 62 022507 abstract https://www.nist.gov/publications/intercombination-and-forbidden-transition-rates-c-and-n-ions-o2-f3-and-s9-measured-0
+S X,2s2.2p3,2P*,1.5,2.10,0.06,ms,storage ring (TSR),Träbert et al. 2000 Phys. Rev. A 62 022507; TSR table https://people.astro.ruhr-uni-bochum.de/traebert/TSR_lifetime_table.html
+S X,2s2.2p3,2P*,1.5,2.14,0.02,ms,storage ring (TSR),Träbert et al. 2000 Phys. Rev. A 62 022507 abstract https://www.nist.gov/publications/intercombination-and-forbidden-transition-rates-c-and-n-ions-o2-f3-and-s9-measured-0
+Ar IV,3s2.3p3,2P*,1.5,243,+73/-79,ms,Kingdon trap,"Yang, Church, Tu, Jin 1994 Phys. Rev. A 50 177 https://oaktrust.library.tamu.edu/bitstream/1969.1/126530/1/PhysRevA.50.177.pdf"
+Ar X,2s2.2p5,2P*,0.5,8.53,+0.24/-0.17,ms,Kingdon trap,"Yang, Church, Tu, Jin 1994 Phys. Rev. A 50 177 https://oaktrust.library.tamu.edu/bitstream/1969.1/126530/1/PhysRevA.50.177.pdf"
+Ar X,2s2.2p5,2P*,0.5,8.70,0.37,ms,Kingdon trap,Moehs & Church 1998 Phys. Rev. A 58 1111 https://oaktrust.library.tamu.edu/bitstream/1969.1/126538/1/PhysRevA.58.1111.pdf
+Ar XI,2s2.2p4,3P,1,14.8,+1.1/-0.48,ms,Kingdon trap,"Yang, Church, Tu, Jin 1994 Phys. Rev. A 50 177 https://oaktrust.library.tamu.edu/bitstream/1969.1/126530/1/PhysRevA.50.177.pdf"
+Fe XII,3s2.3p2.(1D).3d,2F,3.5,7.3,1,ns,beam-foil,"Träbert 1998 MNRAS 297 399, quoted in Wang et al. 2018 https://arxiv.org/pdf/1802.09671"
+Fe XII,3s2.3p3,2D*,1.5,18.0,0.1,ms,storage ring (TSR; UV),Träbert et al. 2002 J. Phys. B 35 671; TSR table https://people.astro.ruhr-uni-bochum.de/traebert/TSR_lifetime_table.html
+Fe XII,3s2.3p3,2D*,2.5,306,10,ms,storage ring (TSR; UV),Träbert et al. 2002 J. Phys. B 35 671; TSR table https://people.astro.ruhr-uni-bochum.de/traebert/TSR_lifetime_table.html
+Fe XII,3s2.3p3,2P*,0.5,4.1,0.12,ms,storage ring (TSR; UV),Träbert et al. 2002 J. Phys. B 35 671; TSR table https://people.astro.ruhr-uni-bochum.de/traebert/TSR_lifetime_table.html
+Fe XII,3s2.3p3,2P*,1.5,1.70,0.02,ms,storage ring (TSR; UV),Träbert et al. 2002 J. Phys. B 35 671; TSR table https://people.astro.ruhr-uni-bochum.de/traebert/TSR_lifetime_table.html
+Fe XIII,3s2.3p.3d,3F*,4,9.9,0.4,ms,storage ring (TSR; cascade analysis),Träbert et al. 2003 J. Phys. B 36 1129; TSR table https://people.astro.ruhr-uni-bochum.de/traebert/TSR_lifetime_table.html
+Fe XIII,3s2.3p2,1D,2,8.1,0.2,ms,storage ring (TSR; UV),Träbert et al. 2002 J. Phys. B 35 671; TSR table https://people.astro.ruhr-uni-bochum.de/traebert/TSR_lifetime_table.html
+Fe XIV,3s.3p.(3P*).3d,4F*,1.5,1.5,0.2,ns,beam-foil,Träbert et al. 1993 Phys. Scr. 48 593; https://arxiv.org/pdf/1409.4214
+Fe XIV,3s.3p.(3P*).3d,4F*,2.5,1.9,0.1,ns,beam-foil,Träbert et al. 1993 Phys. Scr. 48 593; https://arxiv.org/pdf/1409.4214
+Fe XIV,3s.3p.(3P*).3d,4F*,3.5,2.8,0.2,ns,beam-foil,Träbert et al. 1993 Phys. Scr. 48 593; https://arxiv.org/pdf/1409.4214
+Fe XIV,3s.3p2,2D,1.5,0.550,0.020,ns,beam-foil (free multi-exponential fit),Pinnington et al. 1990 Z. Phys. D 17 5; https://arxiv.org/pdf/1409.4214
+Fe XIV,3s.3p2,2D,1.5,0.515,0.025,ns,beam-foil (VNET),Pinnington et al. 1990 Z. Phys. D 17 5; https://arxiv.org/pdf/1409.4214
+Fe XIV,3s.3p2,2D,1.5,0.340,0.060,ns,beam-foil (ANDC),Pinnington et al. 1990 Z. Phys. D 17 5; https://arxiv.org/pdf/1409.4214
+Fe XIV,3s.3p2,2D,2.5,0.700,0.020,ns,beam-foil (free fit),Pinnington et al. 1990; https://arxiv.org/pdf/1409.4214
+Fe XIV,3s.3p2,2D,2.5,0.625,0.025,ns,beam-foil (VNET),Pinnington et al. 1990; https://arxiv.org/pdf/1409.4214
+Fe XIV,3s.3p2,2D,2.5,0.530,0.040,ns,beam-foil (ANDC),Pinnington et al. 1990; https://arxiv.org/pdf/1409.4214
+Fe XIV,3s.3p2,2P,0.5,0.045,0.002,ns,beam-foil (free fit),Pinnington et al. 1990; https://arxiv.org/pdf/1409.4214
+Fe XIV,3s.3p2,2P,0.5,0.035,0.007,ns,beam-foil (ANDC),Pinnington et al. 1990; https://arxiv.org/pdf/1409.4214
+Fe XIV,3s.3p2,2P,1.5,0.046,0.003,ns,beam-foil (free fit),Pinnington et al. 1990; https://arxiv.org/pdf/1409.4214
+Fe XIV,3s.3p2,2P,1.5,0.034,0.007,ns,beam-foil (ANDC),Pinnington et al. 1990; https://arxiv.org/pdf/1409.4214
+Fe XIV,3s.3p2,2S,0.5,0.077,0.004,ns,beam-foil (free fit),Pinnington et al. 1990; https://arxiv.org/pdf/1409.4214
+Fe XIV,3s.3p2,2S,0.5,0.073,0.003,ns,beam-foil (VNET),Pinnington et al. 1990; https://arxiv.org/pdf/1409.4214
+Fe XIV,3s.3p2,2S,0.5,0.061,0.006,ns,beam-foil (ANDC),Pinnington et al. 1990; https://arxiv.org/pdf/1409.4214
+Fe XIV,3s.3p2,4P,0.5,29,3,ns,beam-foil,Träbert et al. 1988 JOSA B 5 2173; Aggarwal & Keenan 2014 Table 4 https://arxiv.org/pdf/1409.4214
+Fe XIV,3s.3p2,4P,2.5,39,5,ns,beam-foil,Träbert et al. 1988 JOSA B 5 2173; https://arxiv.org/pdf/1409.4214
+Fe XIV,3s2.3d,2D,1.5,0.039,0.002,ns,beam-foil (free fit),Pinnington et al. 1990; https://arxiv.org/pdf/1409.4214
+Fe XIV,3s2.3d,2D,1.5,0.032,0.006,ns,beam-foil (ANDC),Pinnington et al. 1990; https://arxiv.org/pdf/1409.4214
+Fe XIV,3s2.3d,2D,2.5,0.041,0.002,ns,beam-foil (free fit),Pinnington et al. 1990; https://arxiv.org/pdf/1409.4214
+Fe XIV,3s2.3d,2D,2.5,0.032,0.005,ns,beam-foil (ANDC),Pinnington et al. 1990; https://arxiv.org/pdf/1409.4214
+Fe XIV,3s2.3p,2P*,1.5,17.52,0.29,ms,Kingdon electrostatic ion trap,Moehs & Church 1999 ApJ 516 L111; Aggarwal & Keenan 2014 Table 4 https://arxiv.org/pdf/1409.4214
+Fe XIV,3s2.3p,2P*,1.5,16.74,0.12,ms,EBIT (LLNL; visible),"Beiersdorfer, Träbert, Pinnington 2003 ApJ 587 836; https://ebit.llnl.gov/research/ebit-measurements-atomic-level-lifetimes"
+Fe XIV,3s2.3p,2P*,1.5,17.0,0.2,ms,Kingdon ion trap (JPL),"Smith, Chutjian, Lozano 2005 Phys. Rev. A 72 062504; Aggarwal & Keenan 2014 Table 4 https://arxiv.org/pdf/1409.4214"
+Fe XIV,3s2.3p,2P*,1.5,16.726,+0.020/-0.010,ms,EBIT (Heidelberg; visible),Brenner et al. 2007 Phys. Rev. A 75 032504; https://ebit.llnl.gov/research/ebit-measurements-atomic-level-lifetimes
+Fe XV,3p2,1D,2,190,20,ps,beam-foil,Hutton et al. 1988 NIM B 31 294; https://www.aanda.org/articles/aa/full_html/2017/01/aa28768-16/T3.html
+Fe XV,3p2,1S,0,63,5,ps,beam-foil,Hutton et al. 1988 NIM B 31 294; https://www.aanda.org/articles/aa/full_html/2017/01/aa28768-16/T3.html
+Fe XV,3s.3d,1D,2,36,4,ps,beam-foil,Hutton et al. 1988 NIM B 31 294; https://www.aanda.org/articles/aa/full_html/2017/01/aa28768-16/T3.html
+Fe XV,3s.3p,1P*,1,42,3,ps,beam-foil (ANDC),"Hutton, Engström, Träbert 1988 NIM B 31 294; Gustafsson et al. 2017 A&A 597 A76 Table 3 https://www.aanda.org/articles/aa/full_html/2017/01/aa28768-16/T3.html"
+Fe XV,3s.3p,1P*,1,47,5,ps,beam-foil (cascade model),Träbert 2023 Atoms 11 85 Table 2 ref [91] https://www.mdpi.com/2218-2004/11/5/85
+Fe XVI,3d,2D,1.5,55,4,ps,beam-foil,Träbert 2023 Atoms 11 85 Table 2 ref [50] https://www.mdpi.com/2218-2004/11/5/85
+Fe XVI,3d,2D,1.5,51,11,ps,beam-foil,Träbert 2023 Atoms 11 85 Table 2 ref [90] https://www.mdpi.com/2218-2004/11/5/85
+Fe XVI,3d,2D,2.5,62,5,ps,beam-foil,Träbert 2023 Atoms 11 85 Table 2 ref [50] https://www.mdpi.com/2218-2004/11/5/85
+Fe XVI,3d,2D,2.5,69,10,ps,beam-foil,Träbert 2023 Atoms 11 85 Table 2 ref [90] https://www.mdpi.com/2218-2004/11/5/85
+Fe XVI,3p,2P*,1.5,125,10,ps,beam-foil (cascade model),Träbert 2023 Atoms 11 85 Table 2 ref [50] https://www.mdpi.com/2218-2004/11/5/85
+Fe XVI,3p,2P*,1.5,138,9,ps,beam-foil (ANDC),Träbert 2023 Atoms 11 85 Table 2 ref [90] https://www.mdpi.com/2218-2004/11/5/85
+Fe XVI,3p,2P*,0.5,155,10,ps,beam-foil (cascade model),Träbert 2023 Atoms 11 85 Table 2 ref [50] https://www.mdpi.com/2218-2004/11/5/85
+Fe XVI,3p,2P*,0.5,167,11,ps,beam-foil (ANDC),Träbert 2023 Atoms 11 85 Table 2 ref [90] https://www.mdpi.com/2218-2004/11/5/85
+Fe XVII,2s2.2p5.3d,1P*,1,43.7,3,fs,natural line width of 3C (synchrotron + EBIT),Kühn et al. 2022 PRL 129 245001 https://par.nsf.gov/servlets/purl/10464790; Träbert 2023 Atoms 11 85 Table 2
+Fe XVII,2s2.2p5.3d,3D*,1,175,,fs,natural line width of 3D (synchrotron + EBIT),Kühn et al. 2022 PRL 129 245001 https://par.nsf.gov/servlets/purl/10464790; Träbert 2023 Atoms 11 85 Table 2
+Fe XVII,2s2.2p5.3s,3P*,2,4.90,+0.23/-0.07,us,EBIT (LLNL; X-ray; M2 decay),Crespo Lopez-Urrutia & Beiersdorfer 2010 ApJ 721 576; Träbert 2023 Atoms 11 85 Table 2 ref [87] https://www.mdpi.com/2218-2004/11/5/85
+Ni XIV,3s2.3p3,2D*,1.5,5.3,0.05,ms,storage ring (TSR),"Träbert, Reinhardt, Hoffmann, Wolf 2006 J. Phys. B 39 945; TSR table https://people.astro.ruhr-uni-bochum.de/traebert/TSR_lifetime_table.html"
+Ni XIV,3s2.3p3,2D*,2.5,70,1,ms,storage ring (TSR),Träbert et al. 2006 J. Phys. B 39 945; TSR table https://people.astro.ruhr-uni-bochum.de/traebert/TSR_lifetime_table.html
+Ni XV,3s2.3p.3d,3F*,4,4.85,0.12,ms,storage ring (TSR; cascade; level label inherited from the Fe XIII row of the table),Träbert et al. 2009 J. Phys. B 42 025002; TSR table https://people.astro.ruhr-uni-bochum.de/traebert/TSR_lifetime_table.html
+Ni XV,3s2.3p2,1D,2,2.25,0.05,ms,storage ring (TSR),Träbert et al. 2009 J. Phys. B 42 025002; TSR table https://people.astro.ruhr-uni-bochum.de/traebert/TSR_lifetime_table.html
+Ni XVI,3s.3p.3d,4F*,4.5,10.0,0.7,ms,storage ring (TSR),Träbert et al. 2011 New J. Phys. 13 023017; TSR table https://people.astro.ruhr-uni-bochum.de/traebert/TSR_lifetime_table.html
+Ni XVI,3s2.3p,2P*,1.5,5.27,0.07,ms,storage ring (TSR),Träbert et al. 2011 New J. Phys. 13 023017; TSR table https://people.astro.ruhr-uni-bochum.de/traebert/TSR_lifetime_table.html
+Ni XVII,3s.3p,3P*,2,7.672,0.015,ms,storage ring (TSR; visible),Träbert et al. 2011 New J. Phys. 13 023017; TSR table https://people.astro.ruhr-uni-bochum.de/traebert/TSR_lifetime_table.html
