@@ -245,12 +245,20 @@ If you use this code or the tuned data in your work, please cite it. GitHub's
 "Cite this repository" button (from `CITATION.cff`) gives the reference; until the
 method paper is out, cite the software:
 
-> D. Chari, *ssopt: automated tuning of Thomas-Fermi scaling parameters for
+> D. Chari, S. N. Nahar and A. K. Pradhan, *ssopt: automated tuning of Thomas-Fermi scaling parameters for
 > SUPERSTRUCTURE*, version 0.6.10 (2026), https://github.com/divyachari01/ssopt
 
 and SUPERSTRUCTURE itself (Eissner, Jones & Nussbaumer 1974; Nussbaumer & Storey
-1978). The code is released under the MIT license (see `LICENSE`): use, copy and
-modify freely, keep the copyright notice, no warranty.
+1978). Where you use the NORAD-format tables, the NORAD comparisons or NORAD data,
+cite NORAD as its page asks: S. N. Nahar, Atoms 8, 68 (2020) and S. N. Nahar &
+G. Hinojosa-Aguirre, Atoms 12, 22 (2024), and acknowledge NORAD-Atomic-Data
+(https://norad.astronomy.osu.edu).
+
+The method and the use of SUPERSTRUCTURE follow the atomic-structure work of
+Profs. Sultana N. Nahar and Anil K. Pradhan's group at The Ohio State University; the code is released
+under the MIT license (see `LICENSE`), copyright Divya Chari, Sultana N. Nahar and Anil K. Pradhan,
+The Ohio State University: use, copy and modify freely, keep the copyright notice,
+no warranty.
 
 ## References
 

@@ -8,6 +8,12 @@ authors:
   - family-names: Chari
     given-names: Divya
     affiliation: "Department of Physics, The Ohio State University"
+  - family-names: Nahar
+    given-names: Sultana N.
+    affiliation: "Department of Astronomy, The Ohio State University"
+  - family-names: Pradhan
+    given-names: Anil K.
+    affiliation: "Department of Astronomy, The Ohio State University"
 repository-code: "https://github.com/divyachari01/ssopt"
 license: MIT
 keywords:
