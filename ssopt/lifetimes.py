@@ -207,4 +207,7 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except BrokenPipeError:      # output piped into head: exit quietly
+        pass
