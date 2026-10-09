@@ -1,0 +1,17 @@
+# data and results stay out of the repository
+data/
+work*/
+dataset*/
+norad_ss/
+runs/
+*.log
+structx
+fortran/
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+# scratch
+*.tar.gz
+*.tgz
+swaps.txt

@@ -1,0 +1,34 @@
+# Ions on NORAD (Nahar) with NIST level data — the validation / training set.
+# RMOP iron
+Fe XVII
+Fe XVIII
+Fe XIX
+Fe XX
+Fe XXI
+Fe XXII
+Fe XXIII
+Fe XXIV
+Fe XXV
+Fe XXVI
+# anchors / few-electron
+Ar XVI
+Ar XVII
+Ar XVIII
+Si XII
+Si XIII
+Si XIV
+S XIV
+S XV
+S XVI
+Ca XV
+Ca XVIII
+Ti XX
+Ti XXI
+Ti XXII
+Cr XXII
+Ni XXVI
+Ni XXVII
+Ni XXVIII
+# RMOP oxygen (NIST only unless NORAD has them)
+O VI
+O VII
