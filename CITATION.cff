@@ -15,7 +15,7 @@ authors:
     given-names: Anil K.
     affiliation: "Department of Astronomy, The Ohio State University"
 repository-code: "https://github.com/divyachari01/ssopt"
-license: MIT
+license: CC-BY-NC-4.0
 keywords:
   - atomic structure
   - SUPERSTRUCTURE

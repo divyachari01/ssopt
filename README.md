@@ -255,10 +255,12 @@ G. Hinojosa-Aguirre, Atoms 12, 22 (2024), and acknowledge NORAD-Atomic-Data
 (https://norad.astronomy.osu.edu).
 
 The method and the use of SUPERSTRUCTURE follow the atomic-structure work of
-Profs. Sultana N. Nahar and Anil K. Pradhan's group at The Ohio State University; the code is released
-under the MIT license (see `LICENSE`), copyright Divya Chari, Sultana N. Nahar and Anil K. Pradhan,
-The Ohio State University: use, copy and modify freely, keep the copyright notice,
-no warranty.
+Profs. Sultana N. Nahar and Anil K. Pradhan's group at The Ohio State University.
+Copyright 2026 Divya Chari, Sultana N. Nahar and Anil K. Pradhan, The Ohio State
+University. The code is released under the Creative Commons Attribution-NonCommercial
+4.0 International License (CC BY-NC 4.0, see `LICENSE`), the same terms as
+NORAD-Atomic-Data: use, share and adapt it for non-commercial purposes with credit and
+citation; for commercial use contact the authors.
 
 ## References
 
