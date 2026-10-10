@@ -1,191 +1,223 @@
 # ssopt: automated λ tuning for SUPERSTRUCTURE
 
-`ssopt` tunes the Thomas-Fermi-Dirac-Amaldi scaling parameters λ_nl of the
-atomic structure code SUPERSTRUCTURE against the NIST energy levels of an ion,
-with no per-ion input beyond the ion's name. It builds the configuration list
-from the NIST level list, pairs computed and observed fine-structure levels,
-minimises the relative RMS energy error with a surrogate-model optimiser
-(about 300 structure runs per ion), runs the full radiative calculation at the
-tuned λ, checks the A-values against NIST (and NORAD where available), makes
-the level labels consistent with NIST where the energies decide it, and writes
-level and transition tables in the NORAD file formats.
+`ssopt` tunes the scaling parameters λ of the atomic structure code
+SUPERSTRUCTURE so that its energy levels match NIST. You give it the name of an
+ion. It does the rest.
 
-It was developed on OSC Cardinal and run on 96 ions of the N- to P-like
-sequences (Z ≤ 28) plus Ne I-X. The data produced (NIST caches, tuned decks,
-`ssout` files, datasets) are not in this repository; only the code is.
+## What it does
 
-```
-python -m ssopt.cli fetch "Ni XV"                        # login node: NIST levels + lines -> data/
-sbatch slurm/ion.slurm "Ni XV" 4 --core-bounds 0.8,1.6   # tune: per-l stage -> per-orbital stage -> prune
-sbatch slurm/full.slurm "Ni XV" orbital best             # full radiative run at the tuned λ + A-value check
-python -m ssopt.export "Ni XV" --workdir work --out work/ni15 --relabel-ssout   # NIST-consistent labels + NORAD tables
+SUPERSTRUCTURE builds each orbital in a Thomas-Fermi-Dirac-Amaldi potential. One
+scaling parameter λ per orbital sets the size of that potential. Users normally
+adjust these by hand until the computed energies agree with observation. That
+takes experience, hours, and gives results that are hard to reproduce.
+
+`ssopt` replaces the hand work. For one ion it:
+
+1. builds the configuration list from the NIST level list;
+2. pairs the computed fine-structure levels with the observed ones;
+3. finds the λ that minimise the relative energy error, using a surrogate
+   model and about 300 structure runs;
+4. runs the full radiative calculation at the tuned λ;
+5. checks the A-values against NIST, and against NORAD where available;
+6. makes the level labels consistent with NIST where the energies decide it;
+7. writes level and transition tables in the NORAD file formats.
+
+Nothing is set per ion. The same settings were used for 96 ions: the N- to
+P-like sequences up to Z = 28, plus Ne I to Ne X. The code was developed and run
+on OSC Cardinal. This repository holds the code only. The NIST caches, tuned
+decks, `ssout` files and datasets are not included.
+
+## Quick start
+
+```bash
+python -m ssopt.cli fetch "Ni XV"                        # NIST levels and lines -> data/ (needs internet)
+sbatch slurm/ion.slurm "Ni XV" 4 --core-bounds 0.8,1.6   # tune lambda: per-l stage, per-orbital stage, prune
+sbatch slurm/full.slurm "Ni XV" orbital best             # full radiative run at the tuned lambda, A-value check
+python -m ssopt.export "Ni XV" --workdir work --out work/ni15 --relabel-ssout   # NIST labels, NORAD tables
 ```
 
 ## What you need
 
 * SUPERSTRUCTURE (Eissner, Jones & Nussbaumer 1974; Nussbaumer & Storey 1978),
   compiled as `./structx` in the repository root. The Fortran source is not
-  included here; obtain it from its authors or from the Iron Project / NORAD
+  included. Get it from its authors or from the Iron Project / NORAD
   distributions. `ifort -O2` and `gfortran -std=legacy -ffixed-line-length-72`
-  give identical level tables.
-* Python 3.10+ with numpy and scipy (nothing else: OSC's python module has no
-  scikit-learn, so the Gaussian process is written in numpy).
-* Internet on the node that runs `fetch` (NIST ASD). Compute nodes run offline
-  from the `data/` cache.
+  give identical results.
+* Python 3.10 or newer with numpy and scipy. Nothing else: the Gaussian process
+  is written in numpy, because OSC's Python module has no scikit-learn.
+* Internet on the node that runs `fetch`. Compute nodes work offline from the
+  `data/` cache.
 
 ## How it works, in plain words
 
-A SUPERSTRUCTURE deck has one knob per orbital, λ(1s) ... λ(4f). Each structure
-run takes seconds to minutes and returns tens to hundreds of level energies.
-The question is which setting of the knobs makes those energies agree best with
-NIST. Turning ten knobs by hand with minutes per try is hopeless, so the code
-does what a careful person would do, faster: try a spread of settings, notice
-the pattern, guess where the best one is, test the guess, repeat.
+Think of a SUPERSTRUCTURE deck as a box with one knob per orbital, λ(1s) to
+λ(4f). Each run of the code takes seconds to minutes and returns tens to
+hundreds of level energies. We want the knob settings that make those energies
+agree best with NIST.
 
-The important design choice is *what* it builds a model of. The obvious thing
-is the score (one number per run, the RMS error). We don't model that. Every
-run gives back many level energies, and each energy changes smoothly, almost
-linearly, when a knob is turned. So the code models every level separately
-("level 17 goes up 0.3 Ry when λ(3p) goes up 0.1, a bit more if λ(3s) also
-moves") and computes the score from the predicted energies. That uses all the
-information in a run instead of throwing most of it away.
+Turning ten knobs by hand, with minutes per try, is hopeless. So the code does
+what a careful person would do, only faster. It tries a spread of settings. It
+notices the pattern. It guesses where the best setting is. It tests the guess.
+Then it repeats.
 
-### The pieces
+The important design choice is what the code builds a model of. The obvious
+choice is the score: one number per run, the RMS error. We do not model that.
+Every run returns many level energies, and each energy changes smoothly, almost
+linearly, when a knob is turned. So the code models every level on its own.
+"Level 17 goes up 0.3 Ry when λ(3p) goes up 0.1, a bit more if λ(3s) also
+moves." The score is then computed from the predicted energies. This uses all
+the information in a run instead of throwing most of it away.
 
-1. **Deck** (`ssopt/configs.py`). Spectroscopic set: every configuration named
-   in the NIST level list within the cap (default n ≤ 4, l ≤ 3). Correlation
-   set: single excitations and paired double excitations from the ground
-   configuration into the same active set. Core (1s² or 1s²2s²2p⁶) closed.
-   Nothing is hard-coded per ion.
-2. **Runs** (`ssopt/runner.py`). `structx` is killed the moment the level table
-   is complete (marker `LIST OF TERMS WITH A WEIGHTED MEAN`); the radiative
-   section costs 20 to 60 times more and is only needed once, at the end.
-3. **Matching** (`ssopt/match.py`). Only NIST levels whose configuration is in
-   the deck are targets. Inside each (parity, 2J) bucket the computed candidates
-   are limited to the configurations NIST names in that bucket and paired
-   one-to-one by nearest energy. LS term labels are deliberately not required to
-   agree (see "Labels" below).
-4. **Objective** (`ssopt/match.py`, `target_weights`). With `--objective rel`
-   (default) every level counts by its percentage error, with a floor at 1% of
-   the highest target energy. `--objective abs` is the plain RMS in Ry. The
-   relative objective is what gets the ground-term fine structure right; the
-   Ry objective sacrifices it for the many high levels.
-5. **Surrogate optimiser** (`ssopt/surrogate.py`, `ssopt/gp.py`). Per-level
-   linear trend plus a multi-output Gaussian process with one shared kernel;
-   Sobol design, trust-region rounds, coordinate polish. Details below.
-6. **Two stages** (`slurm/ion.slurm`). First one λ per angular momentum l
-   (4 parameters, SUPERSTRUCTURE's `MSCAL` convention), then one λ per orbital
-   (10 parameters) seeded from the first.
-7. **Prune** (`cli.py prune`). Leave-group-out of each correlation group at the
-   tuned λ: which correlation actually moves the energies. Diagnostic only.
-8. **A-values** (`ssopt/avalues.py`). Read-only check of the full run against
-   NIST and NORAD, with the length/velocity gauge ratio per line. Never in the
-   objective.
-9. **Export** (`ssopt/export.py`). NORAD-format `en.ls`, `en.fs`, `f.ls`,
-   `f.fs` (level-index layout) and `f.fsm` (multiplet layout) tables, and the
-   label consistency step.
+## The pieces
 
-### The mathematics
+**Deck** (`ssopt/configs.py`). Two sets of configurations are merged. The
+spectroscopic set is every configuration named in the NIST level list within
+the cap (default n ≤ 4, l ≤ 3). The correlation set is the single excitations
+and the paired double excitations from the ground configuration into the same
+active orbitals. The core (1s² or 1s²2s²2p⁶) stays closed.
+
+**Runs** (`ssopt/runner.py`). During tuning, `structx` is stopped as soon as the
+level table is written. The radiative part costs 20 to 60 times more and is
+needed only once, at the end.
+
+**Matching** (`ssopt/match.py`). Only NIST levels whose configuration is in the
+deck are targets. Within each (parity, 2J) group, computed levels are limited
+to the configurations NIST names there and paired one-to-one by nearest energy.
+LS term labels are not required to agree. See "Labels" below for why.
+
+**Objective** (`ssopt/match.py`). With `--objective rel`, the default, every
+level counts by its percentage error. A floor at 1% of the highest target energy
+keeps the ground-term fine structure from dominating. `--objective abs` is the
+plain RMS in Ry. The relative objective is what gets the ground-term fine
+structure right. The Ry objective trades it away for the many high levels.
+
+**Surrogate optimiser** (`ssopt/surrogate.py`, `ssopt/gp.py`). A linear trend
+per level plus one multi-output Gaussian process with a shared kernel. Sobol
+design, trust-region rounds, coordinate polish. The mathematics are below.
+
+**Two stages** (`slurm/ion.slurm`). First one λ per angular momentum l, which is
+four parameters and SUPERSTRUCTURE's `MSCAL` convention. Then one λ per orbital,
+ten parameters, starting from the first result.
+
+**Prune** (`cli.py prune`). Each correlation group is removed in turn at the
+tuned λ to see which correlation actually moves the energies. Diagnostic only.
+
+**A-values** (`ssopt/avalues.py`). A read-only check of the full run against
+NIST and NORAD, with the length/velocity gauge ratio for every line. A-values
+never enter the objective.
+
+**Export** (`ssopt/export.py`). NORAD-format tables `en.ls`, `en.fs`, `f.ls`,
+`f.fs` (level-index layout) and `f.fsm` (multiplet layout), plus the label
+consistency step.
+
+## The mathematics
 
 Let E_k(λ) be the computed energy of matched level k relative to the ground
-level and E_k^obs its NIST value. The quantity minimised is
+level, and E_k^obs its NIST value. The quantity minimised is
 
     F(λ) = sqrt( (1/K) Σ_k w_k² (E_k(λ) − E_k^obs)² )
 
-with w_k = 1 (absolute objective, RMS in Ry) or
+with w_k = 1 for the absolute objective (RMS in Ry), or
 
-    w_k = 1 / max(E_k^obs, 0.01 E_max^obs)      (relative objective, default)
+    w_k = 1 / max(E_k^obs, 0.01 E_max^obs)
+
+for the relative objective, the default.
 
 Every matched level is modelled as
 
     E_k(λ) = a_k + b_k · λ + g_k(λ),      g_k ~ GP(0, κ)
 
-a straight line fitted by least squares plus a Gaussian-process correction with
-the squared-exponential kernel
+That is a straight line fitted by least squares, plus a Gaussian-process
+correction with the squared-exponential kernel
 
     κ(λ, λ') = α² exp[ −½ Σ_i (λ_i − λ'_i)² / ℓ_i² ] + σ² δ
 
-whose hyperparameters (α, ℓ_i, σ) are shared by all levels and found by
-maximising the summed log marginal likelihood. A small ℓ_i means "the energies
-change fast along knob i"; a large one means "that knob barely matters". Levels
-not matched in a given run are imputed from their linear trend so all levels
+The hyperparameters (α, ℓ_i, σ) are shared by all levels. They are found by
+maximising the summed log marginal likelihood. A small ℓ_i means the energies
+change fast along knob i. A large ℓ_i means that knob barely matters. Levels
+not matched in a given run are filled in from their linear trend, so all levels
 share the same design points and one Cholesky factorisation serves all of them.
-The surrogate score F̂(λ) is F evaluated with the posterior means; the
-optimistic variant F̂_β replaces each |Ê_k − E_k^obs| by
-max(|Ê_k − E_k^obs| − β σ̂_k, 0), rewarding points where the model is unsure.
 
-The loop:
+The surrogate score F̂(λ) is F evaluated with the posterior means. The optimistic
+variant F̂_β replaces each |Ê_k − E_k^obs| by max(|Ê_k − E_k^obs| − β σ̂_k, 0).
+It rewards points where the model is unsure.
 
-1. Design: λ = 1 plus 47 Sobol points in the box 1 ± 0.2 (within the bounds).
-2. Round (×5): fit the model on the well-behaved runs (F within 10× of the
-   best); inside the trust region λ_best ± ρ propose the minimiser of F̂, the
-   minimisers of F̂_1 and F̂_2, and Gaussian perturbations of the first
-   (12 points); run them; refit. ρ grows ×1.5 on improvement, halves otherwise.
-3. Polish: coordinate scans of ±0.1 then ±0.05 around the best point, each
+The loop has three parts.
+
+1. Design. Run λ = 1 and 47 Sobol points in the box 1 ± 0.2, within the bounds.
+2. Rounds, five of them. Fit the model on the well-behaved runs (F within 10× of
+   the best). Inside the trust region λ_best ± ρ, propose the minimiser of F̂,
+   the minimisers of F̂_1 and F̂_2, and Gaussian perturbations of the first,
+   12 points in all. Run them and refit. ρ grows by 1.5 on improvement and
+   halves otherwise.
+3. Polish. Coordinate scans of ±0.1, then ±0.05, around the best point, each
    followed by a surrogate minimisation inside the scan box.
 
-Bounds: 0.8 to 1.6 for core orbitals, 0.7 to 2.0 for valence orbitals
+The bounds are 0.8 to 1.6 for core orbitals and 0.7 to 2.0 for valence orbitals
 (`--core-bounds`, `--valence-bounds`). The runs of a batch execute in parallel
-(`--workers`); with 48 cores an ion takes a few minutes to an hour per stage.
+(`--workers`). With 48 cores an ion takes a few minutes to an hour per stage.
 
-### What the tuned λ mean, and don't
+## What the tuned λ mean, and what they don't
 
-On the 86-ion sweep about half of all runs land within 25% of the best RMS: the
-objective is flat along most directions of λ space. Among near-optimal runs
-λ(1s) wanders over ±0.3 with no effect; only λ(2p), and less so λ(2s) and
-λ(3p), are pinned down. So the tuned values of most λ_nl are not properties of
-the ion but of where the optimiser stopped, and they should not be read
-physically. `ssopt/predict.py` fits a map (Z, N, n, l) → λ_nl across tuned ions
-(GP or per-sequence polynomial) with a leave-one-ion-out test that actually
-runs structx at the predicted λ; given the above, treat its predictions as a
-starting point for the optimiser (`--init-lambdas`), not a replacement.
+On the 86-ion sweep, about half of all runs land within 25% of the best RMS.
+The objective is flat along most directions in λ space. Among near-optimal runs,
+λ(1s) wanders over ±0.3 with no effect. Only λ(2p) is well pinned down, with
+λ(2s) and λ(3p) next. So the tuned value of most λ_nl is not a property of the
+ion. It is a property of where the optimiser stopped, and should not be read
+physically.
+
+`ssopt/predict.py` fits a map from (Z, N, n, l) to λ_nl across tuned ions, with
+a leave-one-ion-out test that actually runs structx at the predicted λ. Given
+the flatness above, treat its predictions as a starting point for the optimiser
+(`--init-lambdas`), not as a replacement.
 
 ## Labels: making the ssout consistent with NIST
 
 SUPERSTRUCTURE names each level after its largest LS component. For strongly
-mixed pairs of the same configuration, parity and J the name flips while the
-energies are right: in Ni XV the 3s²3p² level at 0.246 Ry comes out called
-¹D₂ and the one at 0.578 Ry ³P₂, where NIST has ³P₂ at 0.249 and ¹D₂ at 0.573.
-In Ar IV, Cr XVIII and Ni XXII it is the ground level (p³ ⁴S°₃/₂) that carries
-the wrong name. The optimiser is not fooled (it pairs by J and energy within the
-configuration) but anything that reads the ssout by label is.
+mixed pairs with the same configuration, parity and J, that name can flip while
+the energies are right. In Ni XV, the 3s²3p² level at 0.246 Ry comes out called
+¹D₂ and the one at 0.578 Ry ³P₂. NIST has ³P₂ at 0.249 and ¹D₂ at 0.573. In
+Ar IV, Cr XVIII and Ni XXII it is the ground level, p³ ⁴S°₃/₂, that carries the
+wrong name. The optimiser is not fooled, because it pairs by J and energy. But
+anything that reads the ssout by label is.
 
 `python -m ssopt.export "<ion>" --relabel-ssout` rewrites the fine-structure
 level table in `work/<ion>/ssout.full` so that a level takes the NIST label
-when, and only when, the energies force it. The rule, deliberately
-conservative:
+when, and only when, the energies force it. The rule is deliberately cautious.
 
-* For a level whose SS term X differs from its NIST partner's term Y, build the
-  label-respecting alternative (SS-X with the nearest NIST-X, SS-Y with the
-  nearest NIST-Y in the same configuration/parity/J bucket).
+* Take a level whose SS term X differs from its NIST partner's term Y. Build the
+  label-respecting alternative: SS-X paired with the nearest NIST-X, and SS-Y
+  with the nearest NIST-Y, in the same configuration, parity and J.
 * Accept the swap only if that alternative would put the levels off by more
-  than 25% of their energy and is at least 3 times worse than the swap. Two
-  close terms of a light, LS-coupled ion that merely cross because of a
-  few-percent deck error never get near that, and keep SS's label.
-* Never relabel from a NIST level whose term is flagged uncertain (`?`).
+  than 25% of their energy, and is at least three times worse than the swap.
+  Two close terms of a light ion that merely cross because of a few-percent
+  deck error never get near that. They keep SS's label.
+* Never relabel from a NIST level whose term is flagged uncertain with `?`.
 * Levels without a NIST partner keep SS's label.
 
-The original is kept once as `ssout.full.ss`; energies, eigenvectors, the term
-table and the radiative tables are untouched (E1 rows refer to levels by index,
-so they stay consistent). `python swaps.py work` lists every relabelled level
-across all ions with its NIST partner for inspection. On the 96-ion set the
-rule changes 10 levels in 5 ions (the five named above), all verified by hand.
-
+The original file is kept once as `ssout.full.ss`. Energies, eigenvectors, the
+term table and the radiative tables are untouched. E1 rows refer to levels by
+index, so they stay consistent. `python swaps.py work` lists every relabelled
+level across all ions, with its NIST partner, for inspection. On the 96-ion set
+the rule changes 10 levels in 5 ions, the five named above, all checked by hand.
 
 ## Lifetimes against experiment
 
-What laboratories measure is the lifetime of a level, τ = 1/ΣA over every decay
-channel, so the experimental test of the A-values is on lifetimes.
-`python -m ssopt.lifetimes "Fe XVII" --workdir work` sums every rate SUPERSTRUCTURE
-prints in the IC radiative section (E1 and the E3/M2 rows in part 1, E2 and M1 in
-part 2) and lists τ per level with the channel breakdown.
-`--bench benchmarks/lifetimes_exp.csv` compares with measured values; the file
-ships with 139 measured values for 22 ions (storage ring, EBIT, ion trap, beam-foil,
-LIF), each with the URL it was read from; rows with J = term are J-unresolved
-measurements, compared with the g-weighted mean over the term. Extend it from the
-literature as needed (columns: ion,
-config outside the closed core in NIST style, term with parity star, J, τ, unc,
-unit, method, reference). Run `--relabel-ssout` first so level names match.
+Laboratories measure the lifetime of a level, τ = 1/ΣA over every decay
+channel. So the experimental test of the A-values is a test on lifetimes.
+
+`python -m ssopt.lifetimes "Fe XVII" --workdir work` sums every rate that
+SUPERSTRUCTURE prints in the radiative section: E1 and the E3/M2 rows in part 1,
+E2 and M1 in part 2. It lists τ per level with the channel breakdown.
+
+`--bench benchmarks/lifetimes_exp.csv` compares with measured values. The file
+ships with 139 measurements for 22 ions, from storage rings, EBITs, ion traps,
+beam-foil and laser experiments. Each row carries the URL it was read from. Rows
+with J = term are measurements that do not resolve J. They are compared with the
+g-weighted mean over the term. The columns are: ion, configuration outside the
+closed core in NIST style, term with a parity star, J, τ, uncertainty, unit,
+method, reference. Extend it from the literature as needed. Run
+`--relabel-ssout` first, so that level names match.
 
 ## Workflow on a cluster (OSC Cardinal)
 
@@ -193,87 +225,99 @@ unit, method, reference). Run `--relabel-ssout` first so level names match.
 cd ~/SS/ssopt && ln -s ../structx structx
 module load python/3.12
 python -m ssopt.cli fetch "Ni XV"                       # login node, once per ion
-sbatch slurm/ion.slurm "Ni XV" 4 --core-bounds 0.8,1.6  # 48 cores, 4 h limit, --resume safe
-sbatch slurm/full.slurm "Ni XV" orbital best            # single core, 1-6 h; runs export at the end
-WORKDIR=work_rel bash slurm/sweep.sh ions_fe.txt --core-bounds 0.8,1.6   # whole list, skips tuned ions
-python -m ssopt.dataset --workdir work_rel --out dataset_rel             # ions/levels/samples/avalues CSVs
-sbatch slurm/verify.slurm                                                # λ predictor leave-one-ion-out
+sbatch slurm/ion.slurm "Ni XV" 4 --core-bounds 0.8,1.6  # 48 cores, 4 h limit, --resume is safe
+sbatch slurm/full.slurm "Ni XV" orbital best            # single core, 1 to 6 h; runs export at the end
+WORKDIR=work_rel bash slurm/sweep.sh ions_fe.txt --core-bounds 0.8,1.6   # a whole list; skips tuned ions
+python -m ssopt.dataset --workdir work_rel --out dataset_rel             # CSVs: ions, levels, samples, A-values
+sbatch slurm/verify.slurm                                                # lambda predictor, leave-one-ion-out
 python -m ssopt.figures --dataset dataset_rel
 ```
 
-Per ion, `work/<tag>/` holds `deck.json`, `history_l.json` and
-`history_orbital.json` (every λ tried and every matched level energy),
-`ssin.tuned_*`, `levels_*.txt` (level-by-level comparison with NIST),
-`prune.txt`, `ssout.full`, `avalues.txt`, and after export the five NORAD-format
-tables. Extra arguments to `ion.slurm` go to both tune stages
-(`--objective abs|rel`, `--n-max`, `--core-bounds`, ...).
+Per ion, `work/<tag>/` holds:
+
+* `deck.json`, the configuration list;
+* `history_l.json` and `history_orbital.json`, every λ tried and every matched
+  level energy;
+* `ssin.tuned_*`, the tuned decks;
+* `levels_*.txt`, the level-by-level comparison with NIST;
+* `prune.txt`, `ssout.full`, `avalues.txt`;
+* after export, the five NORAD-format tables.
+
+Extra arguments to `ion.slurm` go to both tune stages, for example
+`--objective abs`, `--n-max 5` or `--core-bounds 0.8,1.6`.
 
 ## SUPERSTRUCTURE facts learned the hard way
 
-* `MSCAL = n_orbitals` means λ grouped by l (λ_s λ_p λ_d λ_f, the rest
-  ignored); `MSCAL = 1000 + n` gives one λ per orbital. The `SCALE FACTORS`
-  echo in `ssout` shows what was applied.
-* Card 1 columns 5-8 (`QCS0 QCL0`) are read as core specifiers before being
-  reinterpreted as radiative switches; setting them to −1 to skip radiative
-  data hangs the radial stage. Kill on the marker instead.
-* Free-format λ (`LFREE='Y'`) accepts 4 decimals.
-* The J-level table has no parity column; parity comes from the configuration
-  `CF`. The term table has signed S: negative = odd.
+* `MSCAL = n_orbitals` means λ grouped by l: the input values are λ_s, λ_p,
+  λ_d, λ_f and the rest are ignored. `MSCAL = 1000 + n` gives one λ per orbital.
+  The `SCALE FACTORS` echo in `ssout` shows what was applied.
+* Card 1 columns 5 to 8 (`QCS0 QCL0`) are read as core specifiers before being
+  reinterpreted as radiative switches. Setting them to −1 to skip radiative
+  data hangs the radial stage. Stop the run on the marker instead.
+* Free-format λ (`LFREE='Y'`) accepts four decimals.
+* The J-level table has no parity column. Parity comes from the configuration
+  `CF`. The term table has signed S, with negative meaning odd.
 * `MAXTR` in a given build may be too small for the `fort.7` punch of a large
-  deck (`MAXTR.GE. ... IS REQUIRED`); the punch is incomplete, the ssout is not.
-  Only matters for downstream R-matrix use.
-* `'VEL.GF'` in the radiative table is not the velocity gf: the stored
-  velocity/length ratio sits at about 0.25 for every ion in this build, so the
-  gauge test uses 4× the stored value.
+  deck (`MAXTR.GE. ... IS REQUIRED`). The punch is then incomplete, but the
+  ssout is not. This matters only for downstream R-matrix use.
+* `'VEL.GF'` in the radiative table is not the velocity gf. The stored
+  velocity/length ratio sits near 0.25 for every ion in this build, so the gauge
+  test uses four times the stored value.
 
 ## Layout
 
 ```
-ssopt/    ions configs deck ssout nist norad match runner gp surrogate avalues
-          cli dataset predict figures export
-slurm/    ion.slurm full.slurm sweep.sh verify.slurm optimize.slurm
-tests/    python -m pytest tests/   (needs data/nist_Si_I_levels_ry.csv: run fetch "Si I" first)
-ref/      ssin.cardinal (reference deck), ssout.si1.levels (reference output, test fixture)
-swaps.py  list relabelled levels with their NIST partners
-benchmarks/lifetimes_exp.csv   measured lifetimes for ssopt.lifetimes --bench
+ssopt/       ions configs deck ssout nist norad match runner gp surrogate
+             avalues cli dataset predict figures export lifetimes
+slurm/       ion.slurm full.slurm sweep.sh verify.slurm optimize.slurm
+tests/       python -m pytest tests/   (needs data/nist_Si_I_levels_ry.csv: run fetch "Si I" first)
+ref/         ssin.cardinal (reference deck), ssout.si1.levels (reference output, test fixture)
+benchmarks/  lifetimes_exp.csv, measured lifetimes for ssopt.lifetimes --bench
+swaps.py     lists relabelled levels with their NIST partners
 ions_fe.txt, ions_norad.txt   ion lists used for the sweeps
 ```
 
 ## Citing
 
-If you use this code or the tuned data in your work, please cite it. GitHub's
-"Cite this repository" button (from `CITATION.cff`) gives the reference; until the
+If you use this code or the tuned data, please cite it. GitHub's "Cite this
+repository" button, driven by `CITATION.cff`, gives the reference. Until the
 method paper is out, cite the software:
 
-> D. Chari, S. N. Nahar and A. K. Pradhan, *ssopt: automated tuning of Thomas-Fermi scaling parameters for
-> SUPERSTRUCTURE*, version 0.6.10 (2026), https://github.com/divyachari01/ssopt
+> D. Chari, S. N. Nahar and A. K. Pradhan, *ssopt: automated tuning of
+> Thomas-Fermi scaling parameters for SUPERSTRUCTURE*, version 0.6.10 (2026),
+> https://github.com/divyachari01/ssopt
 
-and SUPERSTRUCTURE itself (Eissner, Jones & Nussbaumer 1974; Nussbaumer & Storey
-1978). Where you use the NORAD-format tables, the NORAD comparisons or NORAD data,
-cite NORAD as its page asks: S. N. Nahar, Atoms 8, 68 (2020) and S. N. Nahar &
-G. Hinojosa-Aguirre, Atoms 12, 22 (2024), and acknowledge NORAD-Atomic-Data
-(https://norad.astronomy.osu.edu).
+Please also cite SUPERSTRUCTURE itself (Eissner, Jones & Nussbaumer 1974;
+Nussbaumer & Storey 1978). Where you use the NORAD-format tables, the NORAD
+comparisons or NORAD data, cite NORAD as its page asks: S. N. Nahar, Atoms 8, 68
+(2020) and S. N. Nahar & G. Hinojosa-Aguirre, Atoms 12, 22 (2024), and
+acknowledge NORAD-Atomic-Data (https://norad.astronomy.osu.edu).
+
+## License
 
 The method and the use of SUPERSTRUCTURE follow the atomic-structure work of
-Profs. Sultana N. Nahar and Anil K. Pradhan's group at The Ohio State University.
-Copyright 2026 Divya Chari, Sultana N. Nahar and Anil K. Pradhan, The Ohio State
-University. The code is released under the Creative Commons Attribution-NonCommercial
-4.0 International License (CC BY-NC 4.0, see `LICENSE`), the same terms as
-NORAD-Atomic-Data: use, share and adapt it for non-commercial purposes with credit and
-citation; for commercial use contact the authors.
+Profs. Sultana N. Nahar and Anil K. Pradhan's group at The Ohio State
+University. Copyright 2026 Divya Chari, Sultana N. Nahar and Anil K. Pradhan,
+The Ohio State University.
+
+The code is released under the Creative Commons Attribution-NonCommercial 4.0
+International License (CC BY-NC 4.0, see `LICENSE`), the same terms as
+NORAD-Atomic-Data. You may use, share and adapt it for non-commercial purposes,
+with credit and citation. For commercial use, contact the authors.
 
 ## Related work
 
-Optimising a structure code's free parameters against NIST with a learned
-surrogate has been done for other codes: Ferreira da Silva et al. (2025) tune the
-Flexible Atomic Code's mean-configuration occupancies for lanthanide and actinide
-ions by Bayesian optimisation of the RMS energy error, and Ma et al. (2024) correct
-the Cowan code's Slater and spin-orbit parameters for Yb I with ElasticNet and
-XGBoost models. AUTOSTRUCTURE can minimise an energy functional with respect to its
-λ internally (Badnell 2011), which is variational rather than a fit to observation.
-ssopt differs in the code and parameters (SUPERSTRUCTURE λ_nl), in modelling every
-level energy rather than the scalar error, in building the configuration list and
-the level pairing from the NIST list with no per-ion input, and in testing the
+Tuning a structure code's free parameters against NIST with a learned surrogate
+has been done for other codes. Ferreira da Silva et al. (2025) tune the Flexible
+Atomic Code's mean-configuration occupancies for lanthanide and actinide ions by
+Bayesian optimisation of the RMS energy error. Ma et al. (2024) correct the Cowan
+code's Slater and spin-orbit parameters for Yb I with ElasticNet and XGBoost
+models. AUTOSTRUCTURE can minimise an energy functional with respect to its λ
+internally (Badnell 2011); that is variational, not a fit to observation.
+
+`ssopt` differs in four ways. It works on SUPERSTRUCTURE's λ_nl. It models every
+level energy rather than the scalar error. It builds the configuration list and
+the level pairing from the NIST list with no per-ion input. And it tests the
 result against measured lifetimes.
 
 * R. Ferreira da Silva, A. Flörs, L. Leitão, J. P. Marques, J. M. Sampaio,
@@ -281,8 +325,8 @@ result against measured lifetimes.
   Calculations of Heavy Elements, arXiv:2502.13250 (2025),
   https://arxiv.org/abs/2502.13250
 * K. Ma, C. Yang, J. Zhang, Y. Li, G. Jiang, J. Chai, Machine Learning-Assisted
-  Hartree-Fock Approach for Energy Level Calculations in the Neutral Ytterbium Atom,
-  Entropy 26, 962 (2024), https://doi.org/10.3390/e26110962
+  Hartree-Fock Approach for Energy Level Calculations in the Neutral Ytterbium
+  Atom, Entropy 26, 962 (2024), https://doi.org/10.3390/e26110962
 * N. R. Badnell, A Breit-Pauli distorted wave implementation for AUTOSTRUCTURE,
   Comput. Phys. Commun. 182, 1528 (2011)
 
@@ -292,4 +336,3 @@ result against measured lifetimes.
 * H. Nussbaumer, P. J. Storey, Astron. Astrophys. 64, 139 (1978)
 * NIST Atomic Spectra Database, https://physics.nist.gov/asd
 * NORAD-Atomic-Data, S. N. Nahar, https://norad.astronomy.osu.edu
-  
