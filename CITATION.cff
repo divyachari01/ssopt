@@ -3,18 +3,17 @@ message: "If you use ssopt in your work, please cite it as below. A journal pape
 title: "ssopt: automated tuning of Thomas-Fermi scaling parameters for SUPERSTRUCTURE"
 type: software
 version: 0.6.10
-date-released: 2026-10-09
+date-released: 2026-10-14
 authors:
   - family-names: Chari
     given-names: Divya
-    affiliation: "Department of Physics, The Ohio State University, Columbus, OH 43210, United States of America"
+    affiliation: "Department of Physics, The Ohio State University"
   - family-names: Nahar
     given-names: Sultana N.
-    affiliation: "Department of Astronomy, The Ohio State University, Columbus, OH 43210, United States of America"
+    affiliation: "Department of Astronomy, The Ohio State University"
   - family-names: Pradhan
     given-names: Anil K.
-    affiliation: "Department of Astronomy, The Ohio State University, Columbus, OH 43210, United States of America"
-                "Chemical Physics Program, The Ohio State University, Columbus, OH 43210, United States of America"
+    affiliation: "Department of Astronomy, The Ohio State University"
 repository-code: "https://github.com/divyachari01/ssopt"
 license: CC-BY-NC-4.0
 keywords:
