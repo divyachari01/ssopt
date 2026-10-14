@@ -38,15 +38,61 @@ python -m ssopt.export "Ni XV" --workdir work --out work/ni15 --relabel-ssout   
 
 ## What you need
 
-* SUPERSTRUCTURE (Eissner, Jones & Nussbaumer 1974; Nussbaumer & Storey 1978),
-  compiled as `./structx` in the repository root. The Fortran source is not
-  included. Get it from its authors or from the Iron Project / NORAD
-  distributions. `ifort -O2` and `gfortran -std=legacy -ffixed-line-length-72`
-  give identical results.
+* **`structx`, the SUPERSTRUCTURE program.** `ssopt` does not do the atomic
+  physics itself. It writes input files (`ssin`), runs SUPERSTRUCTURE on them,
+  and reads the output (`ssout`). `structx` is simply the name we give the
+  compiled SUPERSTRUCTURE executable. It is not part of this repository. To get
+  it:
+  1. Obtain the Fortran source, `struct.f`, from the code's authors, for example
+     through Prof. Sultana Nahar's group at Ohio State (NORAD-Atomic-Data) or the
+     Iron Project distribution.
+  2. Compile it: `gfortran -O2 -std=legacy -ffixed-line-length-72 struct.f -o structx`
+     (or `ifort -O2 struct.f -o structx`; both give identical results).
+  3. Put `structx` in the top folder of this repository, or link to it there:
+     `ln -s /path/to/structx structx`.
+
+  One `structx` works for most atoms and ions. Its array sizes are fixed by
+  `PARAMETER` statements in `struct.f`. A very large deck (many configurations
+  or levels) can exceed them; the run then stops with a message such as
+  `INCREASE MAXUC`, `INCREASE MAXDK` or `MAXTR .GE. ... IS REQUIRED`. In that case
+  raise the named dimensions in `struct.f` and compile a new `structx`.
 * Python 3.10 or newer with numpy and scipy. Nothing else: the Gaussian process
   is written in numpy, because OSC's Python module has no scikit-learn.
 * Internet on the node that runs `fetch`. Compute nodes work offline from the
   `data/` cache.
+
+## Where the results are
+
+Everything for one ion goes into one folder, `work/<ion>/` (for Ni XV,
+`work/ni15/`). The files you will most likely want:
+
+| File | What it is |
+|---|---|
+| `ssin.tuned_orbital` | the SUPERSTRUCTURE input with the tuned λ. Run it yourself with `./structx < ssin.tuned_orbital > ssout` |
+| `levels_orbital.txt` | every computed level next to its NIST value, with the difference in Ry |
+| `ssout.full` | the full SUPERSTRUCTURE output at the tuned λ: energies, mixing, all A-values |
+| `avalues.txt` | the A-values compared line by line with NIST (and NORAD) |
+| `en.fs`, `f.fs`, ... | level and transition tables in NORAD format (after `export`) |
+
+The tuned λ themselves are the λ line of `ssin.tuned_orbital`, and are echoed in
+`ssout.full` on the `SCALE FACTORS` lines.
+
+## Words used here
+
+* **λ (lambda)**: a scaling factor, one per orbital (1s, 2s, 2p, ...), that sets
+  how strongly that orbital is pulled in by the model potential. λ = 1 is the
+  unscaled potential.
+* **NIST**: the NIST Atomic Spectra Database, the standard list of measured
+  energy levels and transition rates.
+* **ssin / ssout**: SUPERSTRUCTURE's input and output files.
+* **Level and term**: a level is one energy state, named like 3s²3p² ³P₂
+  (configuration, LS term, J).
+* **A-value**: the rate (per second) at which an excited level decays by
+  emitting a photon to a lower level.
+* **Lifetime**: how long a level lives on average, τ = 1/ΣA, the quantity
+  laboratories measure.
+* **NORAD**: NORAD-Atomic-Data, the Ohio State atomic database, whose file
+  formats `ssopt` writes.
 
 ## How it works, in plain words
 
@@ -287,8 +333,9 @@ method paper is out, cite the software:
 > Thomas-Fermi scaling parameters for SUPERSTRUCTURE*, version 0.6.10 (2026),
 > https://github.com/divyachari01/ssopt
 
-Please also cite SUPERSTRUCTURE itself (Eissner, Jones & Nussbaumer 1974;
-Nussbaumer & Storey 1978). Where you use the NORAD-format tables, the NORAD
+Please also cite SUPERSTRUCTURE itself: Eissner, Jones & Nussbaumer (1974),
+Nussbaumer & Storey (1978), and, for the forbidden transitions (E2, M1, M2, E3)
+used by `ssopt.lifetimes`, Nahar, Eissner, Chen & Pradhan (2003). Where you use the NORAD-format tables, the NORAD
 comparisons or NORAD data, cite NORAD as its page asks: S. N. Nahar, Atoms 8, 68
 (2020) and S. N. Nahar & G. Hinojosa-Aguirre, Atoms 12, 22 (2024), and
 acknowledge NORAD-Atomic-Data (https://norad.astronomy.osu.edu).
@@ -332,7 +379,28 @@ result against measured lifetimes.
 
 ## References
 
-* W. Eissner, M. Jones, H. Nussbaumer, Comput. Phys. Commun. 8, 270 (1974)
-* H. Nussbaumer, P. J. Storey, Astron. Astrophys. 64, 139 (1978)
-* NIST Atomic Spectra Database, https://physics.nist.gov/asd
-* NORAD-Atomic-Data, S. N. Nahar, https://norad.astronomy.osu.edu
+SUPERSTRUCTURE
+
+* W. Eissner, M. Jones, H. Nussbaumer, Techniques for the calculation of atomic
+  structures and radiative data including relativistic corrections, Comput.
+  Phys. Commun. 8, 270 (1974). The original program.
+* H. Nussbaumer, P. J. Storey, The C III transition probabilities, Astron.
+  Astrophys. 64, 139 (1978). Semi-empirical term-energy corrections.
+* S. N. Nahar, W. Eissner, G. X. Chen, A. K. Pradhan, Atomic data from the Iron
+  Project LIII. Relativistic allowed and forbidden transition probabilities for
+  Fe XVII, Astron. Astrophys. 408, 789 (2003). The early versions did not compute
+  the forbidden transitions correctly. W. Eissner corrected them and extended
+  the program to more transition types (E2, M1, M2, E3); this is the first
+  publication of that version, which is the one `ssopt` reads.
+
+Data
+
+* NIST Atomic Spectra Database, A. Kramida, Yu. Ralchenko, J. Reader and NIST
+  ASD Team, https://physics.nist.gov/asd
+* S. N. Nahar, NORAD-Atomic-Data: a database for spectroscopy and many other
+  applications, Atoms 8, 68 (2020); S. N. Nahar, G. Hinojosa-Aguirre, Atoms 12,
+  22 (2024); https://norad.astronomy.osu.edu
+* Measured lifetimes: one reference per row in `benchmarks/lifetimes_exp.csv`.
+
+Related methods: Ferreira da Silva et al. (2025), Ma et al. (2024) and Badnell
+(2011), listed under "Related work" above.
