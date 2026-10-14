@@ -1,7 +1,9 @@
 # ssopt: automated λ tuning for SUPERSTRUCTURE
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23380595.svg)](https://doi.org/10.5281/zenodo.23380595)
+
 `ssopt` tunes the scaling parameters λ of the atomic structure code
-SUPERSTRUCTURE so that its energy levels match NIST. You give it the name of an
+SUPERSTRUCTURE so that its energy levels come as close as possible to NIST. You give it the name of an
 ion. It does the rest.
 
 ## What it does
@@ -32,6 +34,21 @@ Nothing is set per ion. The same settings were used for 96 ions: the N- to
 P-like sequences up to Z = 28, plus Ne I to Ne X. The code was developed and run
 on OSC Cardinal. This repository holds the code only. The NIST caches, tuned
 decks, `ssout` files and datasets are not included.
+
+## How accurate is it
+
+`ssopt` gets the energies as close to NIST as the SUPERSTRUCTURE model allows,
+but it does not make the calculation exact. On a test set of 86 ions (the N- to
+P-like sequences up to Z = 28), the median RMS error of the matched levels after
+tuning is about 1%, and 74 of the 86 ions are within 3%. Taken level by level,
+about 90% of all levels are within 3% of NIST. The Al-, Si- and P-like ions are
+harder, at 1 to 4% (about 6% at worst), because an n ≤ 4 deck does not capture
+all of their correlation; Ni XV, for example, comes out at 3%.
+
+It works best for ions with a charge of 3 or more. Neutral and near-neutral
+atoms are harder for the model potential, so they have the largest outliers
+(Mg I is off by 24%) and their lifetimes agree less well with experiment.
+Results for these atoms should be used with more caution.
 
 ## Quick start
 
@@ -337,8 +354,13 @@ repository" button gives the reference. Until the method paper is out, cite the
 software:
 
 > D. Chari, S. N. Nahar and A. K. Pradhan, *ssopt: automated tuning of
-> Thomas-Fermi scaling parameters for SUPERSTRUCTURE*, version 0.6.10 (2026),
-> https://github.com/divyachari01/ssopt
+> Thomas-Fermi scaling parameters for SUPERSTRUCTURE* (2026), Zenodo,
+> https://doi.org/10.5281/zenodo.23380595
+
+This DOI always points to the latest version. Each release also has its own
+DOI, listed on the Zenodo page, for citing the exact version you used.
+
+Contributors: Alain Ward (Department of Physics, The Ohio State University).
 
 Please also cite SUPERSTRUCTURE itself: Eissner, Jones & Nussbaumer (1974) and
 Nussbaumer & Storey (1978). For the forbidden transitions (E2, M1, M2, E3),
