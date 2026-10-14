@@ -8,6 +8,9 @@
     {"name": "Nahar, Sultana N.", "affiliation": "Department of Astronomy, The Ohio State University"},
     {"name": "Pradhan, Anil K.", "affiliation": "Department of Astronomy, The Ohio State University"}
   ],
+  "contributors": [
+    {"name": "Ward, Alain", "affiliation": "Department of Physics, The Ohio State University", "type": "ProjectMember"}
+  ],
   "license": "cc-by-nc-4.0",
   "access_right": "open",
   "keywords": ["atomic structure", "SUPERSTRUCTURE", "Thomas-Fermi scaling parameters", "Gaussian process", "surrogate optimisation", "NIST", "NORAD"]
