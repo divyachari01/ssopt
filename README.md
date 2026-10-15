@@ -32,7 +32,8 @@ takes experience and hours of work. The results are also hard to reproduce.
 
 Nothing is set per ion. The same settings were used for 96 ions: the N- to
 P-like sequences up to Z = 28, plus Ne I to Ne X. The code was developed and run
-on OSC Cardinal. This repository holds the code only. The NIST caches, tuned
+on the Ohio Supercomputer Center's Cardinal cluster, but nothing in it is
+specific to that machine. This repository holds the code only. The NIST caches, tuned
 decks, `ssout` files and datasets are not included.
 
 ## How accurate is it
@@ -289,19 +290,37 @@ closed core in NIST style, term with a parity star, J, τ, uncertainty, unit,
 method, reference. Extend it from the literature as needed. Run
 `--relabel-ssout` first, so that level names match.
 
-## Workflow on a cluster (OSC Cardinal)
+## Workflow on a cluster (Slurm)
+
+The scripts in `slurm/` work on any cluster that uses Slurm (OSC, Unity, a
+university cluster and so on). They contain no account or cluster names. Set
+these once in your shell, for example in `~/.bashrc`:
 
 ```bash
-cd ~/SS/ssopt && ln -s ../structx structx
-module load python/3.12
-python -m ssopt.cli fetch "Ni XV"                       # login node, once per ion
-sbatch slurm/ion.slurm "Ni XV" 4 --core-bounds 0.8,1.6  # 48 cores, 4 h limit, --resume is safe
-sbatch slurm/full.slurm "Ni XV" orbital best            # single core, 1 to 6 h; runs export at the end
-WORKDIR=work_rel bash slurm/sweep.sh ions_fe.txt --core-bounds 0.8,1.6   # a whole list; skips tuned ions
-python -m ssopt.dataset --workdir work_rel --out dataset_rel             # CSVs: ions, levels, samples, A-values
-sbatch slurm/verify.slurm                                                # lambda predictor, leave-one-ion-out
-python -m ssopt.figures --dataset dataset_rel
+export SBATCH_ACCOUNT=<your allocation>          # if your cluster needs one
+export SSOPT_MODULES="python"                    # modules to load in each job, if any
 ```
+
+Each script is a short wrapper around `python -m ssopt.cli`, so it is easy to
+adapt to another batch system or to run the same commands on a workstation.
+Edit the core count, memory and time limits at the top of a script if your
+nodes differ.
+
+```bash
+cd ssopt && ln -s /path/to/structx structx               # once
+python -m ssopt.cli fetch "Ni XV"                         # login node, once per ion
+sbatch slurm/ion.slurm "Ni XV" 4 --core-bounds 0.8,1.6    # tune lambda; 48 cores, 4 h limit, --resume is safe
+sbatch slurm/full.slurm "Ni XV" orbital best              # full radiative run, 1 to 6 h; runs export at the end
+bash slurm/sweep.sh ions_fe.txt --core-bounds 0.8,1.6     # a whole list; skips tuned ions
+python -m ssopt.dataset --workdir work --out dataset      # CSVs: ions, levels, samples, A-values
+sbatch slurm/verify.slurm                                 # lambda predictor, leave-one-ion-out
+python -m ssopt.figures --dataset dataset
+```
+
+Everything goes into `work/` and `dataset/` by default. To keep a set of runs
+in another folder, put `WORKDIR=<folder>` in front of the `sbatch` and `sweep`
+commands, for example `WORKDIR=my_runs sbatch slurm/ion.slurm ...`, and use the
+same folder in `--workdir`. For `verify.slurm`, also set `DATASET=<folder>`.
 
 Per ion, `work/<tag>/` holds:
 
