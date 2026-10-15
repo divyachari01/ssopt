@@ -8,13 +8,10 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=8G
 #SBATCH --output=ssopt_full_%j.log
-#SBATCH --account=PAS0578
-#SBATCH --cluster=cardinal
 set -euo pipefail
 ION="${1:-Si I}"; MODE="${2:-l}"; LAMS="${3:-best}"; MATCH="${4:-j}"
 cd "$SLURM_SUBMIT_DIR"
-module load intel/2021.10.0
-module load python/3.12
+if [ -n "${SSOPT_MODULES:-}" ]; then module load $SSOPT_MODULES; fi   # e.g. export SSOPT_MODULES="python"
 python -m ssopt.cli --offline --binary ./structx --data data --workdir "${WORKDIR:-work}" \
     full "$ION" --mode "$MODE" --lambdas "$LAMS" --match-key "$MATCH"
 # NORAD-style tables (en.ls, en.fs, f.ls, f.fs) from the finished ssout.full

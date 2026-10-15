@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# ssopt on OSC Cardinal — λ tuning with the energy surrogate
+# ssopt: λ tuning with the energy surrogate (any Slurm cluster)
 #
 #   sbatch slurm/optimize.slurm "Si I"            # per-l stage (4 λ)
 #   sbatch slurm/optimize.slurm "Si I" orbital    # per-orbital refinement
@@ -15,8 +15,6 @@
 #SBATCH --cpus-per-task=48
 #SBATCH --mem=32G
 #SBATCH --output=ssopt_%j.log
-#SBATCH --account=PAS0578
-#SBATCH --cluster=cardinal
 set -euo pipefail
 
 ION="${1:-Si I}"
@@ -24,8 +22,7 @@ MODE="${2:-l}"
 MATCH="${3:-j}"      # level matching: j (default, any ion) or ls
 cd "$SLURM_SUBMIT_DIR"
 
-module load intel/2021.10.0
-module load python/3.12
+if [ -n "${SSOPT_MODULES:-}" ]; then module load $SSOPT_MODULES; fi   # e.g. export SSOPT_MODULES="python"
 
 echo "ion=$ION mode=$MODE host=$(hostname) cpus=$SLURM_CPUS_PER_TASK start=$(date)"
 [ -x ./structx ] || { echo "no ./structx — build on a login node: ifort -O2 -o structx struct.f"; exit 2; }

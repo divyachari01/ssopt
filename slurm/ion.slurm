@@ -12,14 +12,11 @@
 #SBATCH --cpus-per-task=48
 #SBATCH --mem=32G
 #SBATCH --output=ssopt_ion_%j.log
-#SBATCH --account=PAS0578
-#SBATCH --cluster=cardinal
 set -euo pipefail
 ION="${1:?ion, e.g. 'Fe XVII'}"
 NMAX="${2:-4}"
 cd "$SLURM_SUBMIT_DIR"
-module load intel/2021.10.0
-module load python/3.12
+if [ -n "${SSOPT_MODULES:-}" ]; then module load $SSOPT_MODULES; fi   # e.g. export SSOPT_MODULES="python"
 SCRATCH="${TMPDIR:-/tmp}/ssopt_$SLURM_JOB_ID"
 WORKDIR="${WORKDIR:-work}"
 COMMON="--offline --binary ./structx --data data --workdir $WORKDIR"

@@ -9,7 +9,7 @@ set -euo pipefail
 LIST="${1:?ion list file}"; shift
 EXTRA=("$@")
 export WORKDIR="${WORKDIR:-work}"          # WORKDIR=work_rel bash slurm/sweep.sh ...
-module load python/3.12 2>/dev/null || true
+if [ -n "${SSOPT_MODULES:-}" ]; then module load $SSOPT_MODULES; fi   # e.g. export SSOPT_MODULES="python"
 while IFS= read -r ION; do
   [ -z "$ION" ] && continue; case "$ION" in \#*) continue;; esac
   echo "== $ION"
