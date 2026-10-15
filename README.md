@@ -126,7 +126,7 @@ Think of a SUPERSTRUCTURE deck as a box with one knob per orbital, λ(1s) to
 hundreds of level energies. We want the knob settings that make those energies
 agree best with NIST.
 
-Turning ten knobs by hand, with minutes per try, is hopeless. So the code does
+Turning ten knobs by hand, with minutes per try, is time consuming. So the code does
 what a careful person would do, only faster. It tries a spread of settings. It
 notices the pattern. It guesses where the best setting is. It tests the guess.
 Then it repeats.
