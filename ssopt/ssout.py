@@ -66,8 +66,15 @@ class E1:
 
 
 def parse_configs(text: str) -> dict[int, dict]:
-    """CF index -> {(n,l): occ}. The (N L) list may continue on following lines."""
+    """CF index -> {(n,l): occ}. The (N L) list may continue on following lines.
+    Shells declared closed on the first card ('CLOSED (N L)-SHELLS' in the header)
+    are not repeated per configuration by structx; they are added back here."""
     out: dict[int, dict] = {}
+    closed: dict = {}
+    mc = re.search(r"CLOSED \(N L\)-SHELLS((?:\s+\d+\s+\d+)+)", text[:20000])
+    if mc:
+        v = [int(x) for x in mc.group(1).split()]
+        closed = {(v[k], v[k + 1]): 2 * (2 * v[k + 1] + 1) for k in range(0, len(v) - 1, 2)}
     lines = text.splitlines()
     i = 0
     while i < len(lines):
@@ -80,7 +87,7 @@ def parse_configs(text: str) -> dict[int, dict]:
             while j < len(lines) and re.fullmatch(r"\s{20,}(\d+\s+)+\d*\s*", lines[j] + " "):
                 nums += lines[j].split()
                 j += 1
-            cfg: dict = {}
+            cfg: dict = dict(closed)
             for k in range(0, len(nums) - 1, 2):
                 o = (int(nums[k]), int(nums[k + 1]))
                 cfg[o] = cfg.get(o, 0) + 1

@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import time
 from dataclasses import dataclass, field
 
@@ -31,8 +32,8 @@ from scipy.stats import qmc
 from .gp import MultiOutputGP
 
 from . import match as M
-from .deck import lambda_names, n_lambda, write_ssin
-from .runner import run_batch
+from .deck import algebra_key, lambda_names, n_lambda, set_restart, write_ssin
+from .runner import run_batch, run_structx
 
 
 # ----------------------------------------------------------------------------
@@ -223,8 +224,17 @@ class Evaluator:
     """Turns λ vectors into Samples by running structx."""
 
     def __init__(self, ion, configs, nist_levels, targets, cf_lookup, *, mode, binary,
-                 workroot, n_workers, timeout=1800, e_max=None, log=print, match_key="j", objective="abs"):
+                 workroot, n_workers, timeout=1800, e_max=None, log=print, match_key="j", objective="abs",
+                 closed_core=False, restart_dir=None):
+        """restart_dir: where to keep the saved angular algebra (fort.10). The
+        first structx run does the algebra and saves it; every later run reads
+        it back and only does the radial part, which is many times faster for
+        ions with many open-shell electrons. None = no restart (every run
+        repeats the algebra)."""
         self.ion, self.configs, self.nist = ion, configs, nist_levels
+        self.restart_dir = restart_dir
+        self.restart_file = None
+        self.closed_core = closed_core
         self.match_key = match_key
         self.objective = objective
         self.weights = M.target_weights({k: nist_levels[k].E for k in targets}, objective)
@@ -235,13 +245,60 @@ class Evaluator:
         self.counter = 0
         self._cf_lookup = cf_lookup
 
+    def _run(self, decks, names):
+        kw = dict(n_workers=self.n_workers, stop_after_levels=True, timeout=self.timeout)
+        first = None
+        if self.restart_dir and self.restart_file is None:
+            first = self._save_algebra(decks[0])
+        if not self.restart_file:
+            return run_batch(decks, self.workroot, self.binary, names=names, **kw)
+        todo = decks[1:] if first is not None else decks
+        extra = [decks[0]] if first is not None else []      # one check that restart reproduces
+        res = run_batch([set_restart(d, 4) for d in todo + extra], self.workroot, self.binary,
+                        names=names[len(decks) - len(todo):] + [names[0] + "r"] * len(extra),
+                        restart_file=self.restart_file, **kw)
+        if first is not None:
+            chk = res.pop()
+            same = not first.ok or chk.ok and len(chk.levels) == len(first.levels) and all(
+                abs(a.E - b.E) < 1e-6 for a, b in zip(chk.levels, first.levels))
+            if not same:
+                self.log("  restart did not reproduce the energies: running without it")
+                self.restart_dir, self.restart_file = None, None
+                return [first] + run_batch(decks[1:], self.workroot, self.binary, names=names[1:], **kw)
+            res = [first] + res
+        return res
+
+    def _save_algebra(self, deck):
+        """Run one deck with the algebra saved to fort.10 (or reuse a saved one with
+        the same configuration cards). Returns that run's result, or None if reused."""
+        os.makedirs(self.restart_dir, exist_ok=True)
+        path = os.path.join(self.restart_dir, algebra_key(deck) + ".fort10")
+        if os.path.exists(path):
+            self.restart_file = path
+            return None
+        wd = os.path.join(self.workroot, "algebra_" + algebra_key(deck))
+        t0 = time.time()
+        r = run_structx(set_restart(deck, -1), wd, self.binary, stop_after_levels=True, timeout=self.timeout)
+        f10 = os.path.join(wd, "fort.10")
+        saved = os.path.exists(f10) and b"MSTART= 4" in open(os.path.join(wd, "ssout"), "rb").read()
+        if saved:
+            os.replace(f10, path)
+            shutil.copyfile(os.path.join(wd, "ssout"), path + ".ssout")
+            self.restart_file = path
+            self.log(f"  angular algebra done once in {time.time() - t0:.0f}s and saved; "
+                     f"later runs read it back")
+        else:
+            self.log("  could not save the angular algebra: running without restart")
+            self.restart_dir = None
+        return r
+
     def evaluate(self, lams: list[list[float]], tag: str = "") -> list[Sample]:
-        decks = [write_ssin(self.configs, self.ion.Z, list(l), mode=self.mode, mpnch=0) for l in lams]
+        decks = [write_ssin(self.configs, self.ion.Z, list(l), mode=self.mode, mpnch=0,
+                            closed_core=self.closed_core) for l in lams]
         names = [f"e{self.counter + i:04d}" for i in range(len(lams))]
         self.counter += len(lams)
         t0 = time.time()
-        results = run_batch(decks, self.workroot, self.binary, n_workers=self.n_workers,
-                            names=names, stop_after_levels=True, timeout=self.timeout)
+        results = self._run(decks, names)
         out = []
         for lam, r in zip(lams, results):
             if not r.ok:

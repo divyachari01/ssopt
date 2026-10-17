@@ -49,6 +49,9 @@ def parse_rates(text: str) -> dict[tuple[int, int], dict[str, float]]:
     body = text[start:]
     cut = body.find(PART2)
     part1, part2 = (body, "") if cut < 0 else (body[:cut], body[cut:])
+    if cut < 0:
+        print("note: no E2/M1 data in this ssout (the full run was E1 only). Lifetimes of levels that "
+              "decay only by forbidden lines need a full run without --e1-only.")
     for line in part1.splitlines():
         m = _E3.match(line)
         if m:

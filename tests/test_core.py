@@ -40,7 +40,11 @@ def test_deck_roundtrip_is_byte_identical():
     assert len(d["configs"]) == 28
     assert d["lambdas"] == [1.1, 1.0, 1.0, 1.0]
     out = write_ssin(d["configs"], 14, d["lambdas"], mode="l", lam_decimals=1)
-    assert out == ref
+    # configuration cards: one configuration per card now (structx reads them as a
+    # stream, energies identical); everything from the terminator card on is unchanged
+    assert configs_equal(read_ssin(out)["configs"], d["configs"])
+    tail = lambda t: t[t.index("\n 0  "):]
+    assert tail(out) == tail(ref)
     d2 = read_ssin(write_ssin(d["configs"], 14, [1.05] * 10, mode="orbital"))
     assert d2["mode"] == "orbital" and d2["mscal"] == 1010 and len(d2["lambdas"]) == 10
     assert configs_equal(d2["configs"], d["configs"])
@@ -50,7 +54,7 @@ def test_ion_and_generator():
     ion = build_ion("Si I")
     assert ion.core == {(1, 0): 2, (2, 0): 2, (2, 1): 6}
     assert ion.valence == {(3, 0): 2, (3, 1): 2}
-    g = generate_ci_configs(ion, 4, 3, 2)
+    g = generate_ci_configs(ion, 4, 3, 2, "paired")      # the reference deck has the 4l^2 doubles
     ref = read_ssin(open(REF_SSIN).read())["configs"]
     assert {config_key(c) for c in g} == {config_key(c) for c in ref}
     assert n_lambda(g, "l") == 4 and n_lambda(g, "orbital") == 10
@@ -158,3 +162,31 @@ def test_lambda_predictor_recovers_smooth_trend(tmp_path):
     res = loio(load_ions(str(tmp_path)), "gp")
     assert len(res) == len(rows)
     assert max(r["rms_err"] for r in res) < 0.03      # trend spans 0.14; interpolation error must be small
+
+
+def test_complex_doubles_stay_in_outer_shell():
+    ion = build_ion("Si I")
+    full = generate_ci_configs(ion, 4, 3, 2, "paired")
+    cx = generate_ci_configs(ion, 4, 3, 2)              # default: complex
+    assert len(cx) < len(full)
+    ref = {o: n for o, n in ion.valence.items()}
+    for c in cx:
+        gained = [o for o in c if c.get(o, 0) > ref.get(o, 0) + ion.core.get(o, 0)]
+        exc = sum(max(0, ion.valence.get(o, 0) - (c.get(o, 0) - ion.core.get(o, 0))) for o in ion.valence)
+        if exc == 2:
+            assert all(n <= 3 for (n, l) in gained)
+
+
+def test_restart_switch_and_algebra_key():
+    from ssopt import deck as D
+    ion = build_ion("Fe XV")
+    cfgs = generate_ci_configs(ion, 4, 3, 2)
+    n = D.n_lambda(cfgs, "orbital")
+    a = D.write_ssin(cfgs, ion.Z, [1.0] * n, mode="orbital", mpnch=0)
+    b = D.write_ssin(cfgs, ion.Z, [1.2] * n, mode="orbital", mpnch=-1)
+    assert D.algebra_key(a) == D.algebra_key(b)                  # λ and MPNCH do not change the algebra
+    r = D.set_restart(a, 4)
+    assert D.algebra_key(r) == D.algebra_key(a)
+    assert D.read_ssin(r)["configs"] == D.read_ssin(a)["configs"]
+    term = [ln for ln in r.split("\n") if "-1" in ln[60:72]][0]
+    assert term[:2] == " 4" and D.set_restart(r, 0) == a

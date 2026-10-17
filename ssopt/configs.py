@@ -54,11 +54,16 @@ def full_config(ion: Ion, valence: dict) -> dict:
 
 
 def generate_ci_configs(ion: Ion, n_max: int = 4, l_max: int = 3, max_exc: int = 2,
-                        doubles_mode: str = "paired") -> list[dict]:
+                        doubles_mode: str = "complex") -> list[dict]:
     """Singles (+ doubles) of the valence electrons into the active set.
-    doubles_mode='paired': both promoted electrons land in ONE subshell."""
+    doubles_mode='paired':  both promoted electrons land in ONE subshell.
+    doubles_mode='complex': as 'paired', but only into subshells of the ground
+                            configuration's outermost shell (e.g. 3s2 3p2 -> 3p4,
+                            3p2 3d2, 3s2 3d2), the near-degenerate correlation.
+                            Doubles into higher shells (4s2 ... 4f2) are left out."""
     orbs = active_orbitals(ion, n_max, l_max)
     ref = {o: ion.valence.get(o, 0) for o in orbs}
+    n_outer = max(n for (n, l) in ion.valence)
     raw: list[dict] = []
     _distribute(orbs, ion.n_valence, 0, {}, raw)
     out, seen = [], set()
@@ -66,9 +71,11 @@ def generate_ci_configs(ion: Ion, n_max: int = 4, l_max: int = 3, max_exc: int =
         exc = excitation_level(dist, ref)
         if exc > max_exc:
             continue
-        if doubles_mode == "paired" and exc == 2:
-            gained = sum(1 for o in dist if dist.get(o, 0) > ref.get(o, 0))
-            if gained > 1:
+        if doubles_mode in ("paired", "complex") and exc == 2:
+            gained = [o for o in dist if dist.get(o, 0) > ref.get(o, 0)]
+            if len(gained) > 1:
+                continue
+            if doubles_mode == "complex" and gained[0][0] > n_outer:
                 continue
         full = full_config(ion, dist)
         k = config_key(full)
@@ -124,7 +131,7 @@ class DeckPlan:
 
 
 def build_deck(ion: Ion, nist_levels=None, *, n_max: int = 4, l_max: int = 3,
-               max_exc: int = 2, doubles_mode: str = "paired",
+               max_exc: int = 2, doubles_mode: str = "complex",
                e_max: float | None = None) -> DeckPlan:
     """Spectroscopic (NIST-derived) configs first, then correlation configs."""
     spec = spectroscopic_from_nist(ion, nist_levels or [], n_max, l_max, e_max)

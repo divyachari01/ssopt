@@ -16,10 +16,11 @@ takes experience and hours of work. The results are also hard to reproduce.
 `ssopt` replaces the hand work. For one ion it:
 
 1. **Builds the configuration list.** Starting from the ground configuration,
-   it adds single and paired double excitations into the active orbitals (up to
-   n = 4, l = 3 by default), along with every configuration NIST lists in that
-   range. The list is therefore larger than NIST's, and the extra
-   configurations improve the energies through configuration interaction.
+   it adds single excitations into the active orbitals (up to n = 4, l = 3 by
+   default) and double excitations within the outermost shell, along with every
+   configuration NIST lists in that range. The list is therefore larger than
+   NIST's, and the extra configurations improve the energies through
+   configuration interaction.
 2. **Pairs computed levels with NIST levels.** Only the levels NIST has are used
    to judge the fit, but every other level is still calculated and kept in the
    output.
@@ -51,11 +52,19 @@ atoms are harder for the model potential, so they have the largest outliers
 (Mg I is off by 24%) and their lifetimes agree less well with experiment.
 Results for these atoms should be used with more caution.
 
+## How long it takes
+
+On one 48-core node of Cardinal, tuning an ion takes 1 to 7 minutes (median
+1.4 minutes over 119 ions) and the full radiative run takes a few seconds to 6
+minutes (median 4 seconds). The P-like ions are the slowest, because their decks
+have the most levels. Each ion is its own job, so all 119 ions, tuned and with
+full runs, finished in about 15 minutes.
+
 ## Quick start
 
 ```bash
 python -m ssopt.cli fetch "Ni XV"                        # NIST levels and lines -> data/ (needs internet)
-sbatch slurm/ion.slurm "Ni XV" 4 --core-bounds 0.8,1.6   # tune lambda: per-l stage, per-orbital stage, prune
+sbatch slurm/ion.slurm "Ni XV" 4 --core-bounds 0.8,1.6   # tune lambda: per-l stage, then per-orbital stage
 sbatch slurm/full.slurm "Ni XV" orbital best             # full radiative run at the tuned lambda, A-value check
 python -m ssopt.export "Ni XV" --workdir work --out work/ni15 --relabel-ssout   # NIST labels, NORAD tables
 ```
@@ -144,12 +153,50 @@ the information in a run instead of throwing most of it away.
 **Deck** (`ssopt/configs.py`). Two sets of configurations are merged. The
 spectroscopic set is every configuration named in the NIST level list within
 the cap (default n ≤ 4, l ≤ 3). The correlation set is the single excitations
-and the paired double excitations from the ground configuration into the same
-active orbitals. The core (1s² or 1s²2s²2p⁶) stays closed.
+from the ground configuration into the active orbitals, plus the double
+excitations that stay within its outermost shell (for 3s²3p², for example,
+3p⁴, 3p²3d² and 3s²3d²). The core (1s² or 1s²2s²2p⁶) stays closed.
+
+Double excitations into higher shells (4s² up to 4f²) barely mix with the low
+levels but make the deck several times larger. Leaving them out keeps the
+accuracy essentially unchanged (on 87 test ions the median RMS went from 1.02%
+to 1.07%) and makes the runs 4 to 50 times faster, depending on the ion.
+`--doubles paired` puts them back.
+
+`--closed-core` declares the inner shells that are full in every configuration
+closed on the first card of the deck, which makes the runs another 2 to 3 times
+faster. It also changes the fine-structure energies, because SUPERSTRUCTURE then
+treats those shells differently in the Breit-Pauli part. On the test ions it
+improved highly charged ions (Li-like ions went from about 0.3% to 0.02%) but
+made low-charge Si- and Al-like ions worse (Ar V from 2.5% to 4.4%), so it is
+off by default.
+
+The angular algebra (the coupling coefficients between configurations) depends
+only on the configuration list, not on λ. So the first run of a tuning stage
+saves it in SUPERSTRUCTURE's restart file (`fort.10`), and every later run reads
+it back and only does the radial part. The energies are identical to a run from
+scratch. Each run gets many times faster for ions with many open-shell
+electrons (S II: from 60 s to 3 s per run). `--no-restart` switches this off.
 
 **Runs** (`ssopt/runner.py`). During tuning, `structx` is stopped as soon as the
 level table is written. The radiative part costs 20 to 60 times more and is
 needed only once, at the end.
+
+The full run at the end computes the allowed (E1) and the forbidden (E2, M1)
+transitions. Most of its time goes into the transitions. `--e1-only` skips the
+forbidden ones (LCE2 = −2 on the terminator card), which roughly halves the
+time. The E1 data and the NORAD tables stay the same, but the lifetimes of
+metastable levels then lack their forbidden decays.
+
+Most levels of a deck belong to the correlation configurations, and the
+transition part grows with the square of the number of levels. In S II, for
+example, only 128 of the 821 levels have a NIST configuration as their leading
+configuration. So by default the full run computes the radiative data (allowed
+and forbidden) only between those levels (LCE1 = LCE2 = number of NIST
+configurations on the terminator card). Their rates are the same as in a run
+with all transitions. The levels of the correlation configurations stay in the
+level table but get no transitions. `--all-transitions` computes everything
+(for S II about an hour instead of a few minutes).
 
 **Matching** (`ssopt/match.py`). Only NIST levels whose configuration is in the
 deck are targets. Within each (parity, 2J) group, computed levels are limited
@@ -226,7 +273,7 @@ The loop has three parts.
 
 The bounds are 0.8 to 1.6 for core orbitals and 0.7 to 2.0 for valence orbitals
 (`--core-bounds`, `--valence-bounds`). The runs of a batch execute in parallel
-(`--workers`). With 48 cores an ion takes a few minutes to an hour per stage.
+(`--workers`). With 48 cores, tuning an ion takes 1 to 7 minutes.
 
 ## What the tuned λ mean, and what they don't
 
@@ -279,7 +326,8 @@ channel. So the experimental test of the A-values is a test on lifetimes.
 
 `python -m ssopt.lifetimes "Fe XVII" --workdir work` sums every rate that
 SUPERSTRUCTURE prints in the radiative section: E1 and the E3/M2 rows in part 1,
-E2 and M1 in part 2. It lists τ per level with the channel breakdown.
+E2 and M1 in part 2 (missing if the full run used `--e1-only`). It lists τ per
+level with the channel breakdown.
 
 `--bench benchmarks/lifetimes_exp.csv` compares with measured values. The file
 ships with 139 measurements for 22 ions, from storage rings, EBITs, ion traps,
@@ -310,7 +358,7 @@ nodes differ.
 cd ssopt && ln -s /path/to/structx structx               # once
 python -m ssopt.cli fetch "Ni XV"                         # login node, once per ion
 sbatch slurm/ion.slurm "Ni XV" 4 --core-bounds 0.8,1.6    # tune lambda; 48 cores, 4 h limit, --resume is safe
-sbatch slurm/full.slurm "Ni XV" orbital best              # full radiative run, 1 to 6 h; runs export at the end
+sbatch slurm/full.slurm "Ni XV" orbital best              # full radiative run; runs export at the end
 bash slurm/sweep.sh ions_fe.txt --core-bounds 0.8,1.6     # a whole list; skips tuned ions
 python -m ssopt.dataset --workdir work --out dataset      # CSVs: ions, levels, samples, A-values
 sbatch slurm/verify.slurm                                 # lambda predictor, leave-one-ion-out
@@ -340,9 +388,11 @@ Extra arguments to `ion.slurm` go to both tune stages, for example
 * `MSCAL = n_orbitals` means λ grouped by l: the input values are λ_s, λ_p,
   λ_d, λ_f and the rest are ignored. `MSCAL = 1000 + n` gives one λ per orbital.
   The `SCALE FACTORS` echo in `ssout` shows what was applied.
-* Card 1 columns 5 to 8 (`QCS0 QCL0`) are read as core specifiers before being
-  reinterpreted as radiative switches. Setting them to −1 to skip radiative
-  data hangs the radial stage. Stop the run on the marker instead.
+* Columns 1 to 8 are read from every configuration card, and the values that
+  count for some switches are those on the terminator card. Columns 1 to 2 of
+  the terminator are the restart switch (MSTRT0). Columns 5 to 8 of the
+  terminator are the radiative switches LCE1 and LCE2, while columns 5 to 8 of
+  card 1 declare the closed core.
 * Free-format λ (`LFREE='Y'`) accepts four decimals.
 * The J-level table has no parity column. Parity comes from the configuration
   `CF`. The term table has signed S, with negative meaning odd.

@@ -23,7 +23,7 @@ import numpy as np
 from . import match as M
 from . import nist, norad
 from .configs import build_deck, prune_groups
-from .deck import lambda_names, n_lambda, write_ssin
+from .deck import e1_only, lambda_names, limit_transitions, n_lambda, orbitals_used, set_restart, write_ssin
 from .ions import build_ion, config_str
 from .runner import run_structx, run_batch
 from .surrogate import Evaluator, History, default_bounds, optimize
@@ -111,7 +111,8 @@ def cmd_tune(args):
     workroot = os.path.join(args.scratch or iondir, "runs")
     ev = Evaluator(ion, plan.configs, nl, targets, None, mode=mode, binary=os.path.abspath(args.binary),
                    workroot=workroot, n_workers=args.workers, timeout=args.timeout, log=log,
-                   match_key=args.match_key, objective=args.objective)
+                   match_key=args.match_key, objective=args.objective, closed_core=args.closed_core,
+                   restart_dir=None if args.no_restart else os.path.join(args.scratch or workroot, "algebra"))
     hpath = os.path.join(iondir, f"history_{mode}.json")
     hist = History.load(hpath) if (args.resume and os.path.exists(hpath)) else None
     if hist is not None and hist.objective != args.objective:
@@ -126,14 +127,17 @@ def cmd_tune(args):
                     trust_radius=args.trust_radius, n_polish=args.polish, polish_step=args.polish_step,
                     history=hist, save_path=hpath, log=log)
     best = hist.best()
-    deck = write_ssin(plan.configs, ion.Z, best.lam, mode=mode, mpnch=-1,
-                      out_path=os.path.join(iondir, f"ssin.tuned_{mode}"))
+    deck = limit_transitions(write_ssin(plan.configs, ion.Z, best.lam, mode=mode, mpnch=-1,
+                                        closed_core=args.closed_core), plan.tags.count("spec"))
+    with open(os.path.join(iondir, f"ssin.tuned_{mode}"), "w") as f:     # runs fast with ./structx < ssin
+        f.write(deck)
     unit = "Ry" if args.objective == "abs" else "(relative)"
     log(f"best λ ({mode}) = {np.round(best.lam, 4).tolist()}  RMS={best.rms:.5f} {unit} over "
         f"{best.n_matched} levels  -> {iondir}/ssin.tuned_{mode}")
     # detailed comparison at the best point
-    r = run_structx(deck, os.path.join(workroot, "best"), os.path.abspath(args.binary),
-                    stop_after_levels=True, timeout=args.timeout)
+    rf = ev.restart_file
+    r = run_structx(set_restart(deck, 4) if rf else deck, os.path.join(workroot, "best"),
+                    os.path.abspath(args.binary), stop_after_levels=True, timeout=args.timeout, restart_file=rf)
     m = M.match_levels(r.levels, nl, ion, plan.configs, r.configs, targets=targets, match_key=args.match_key)
     rep = M.summary(m, nl, r.levels, r.configs)
     with open(os.path.join(iondir, f"levels_{mode}.txt"), "w") as f:
@@ -170,9 +174,14 @@ def cmd_full(args):
     ion, iondir, log, nl, plan = _setup(args)
     mode = args.mode
     lam = _lambdas_arg(args, iondir)
-    deck = write_ssin(plan.configs, ion.Z, lam, mode=mode, mpnch=-1,
-                      out_path=os.path.join(iondir, "ssin.full"))
-    log(f"full run at λ={lam} ({mode}) ...")
+    deck = write_ssin(plan.configs, ion.Z, lam, mode=mode, mpnch=-1, closed_core=args.closed_core)
+    if not args.all_transitions:
+        deck = limit_transitions(deck, plan.tags.count("spec"))
+    if args.e1_only:
+        deck = e1_only(deck)
+    with open(os.path.join(iondir, "ssin.full"), "w") as f:
+        f.write(deck)
+    log(f"full run at λ={lam} ({mode}){', E1 only' if args.e1_only else ''}{', all levels' if args.all_transitions else ', transitions between NIST-configuration levels'} ...")
     r = run_structx(deck, os.path.join(iondir, "full"), os.path.abspath(args.binary),
                     stop_after_levels=False, timeout=args.timeout * 10, keep_fort7=True)
     log(f"  done in {r.elapsed:.0f}s, {len(r.levels)} levels")
@@ -197,9 +206,15 @@ def cmd_prune(args):
     targets = M.nist_targets(nl, ion, plan.configs, e_max=args.e_max)
     decks, names = [], []
     variants = [("baseline", [])] + [(g, idx) for g, idx in groups.items()]
+    orbs = orbitals_used(plan.configs)
     for g, idx in variants:
         cfgs = [c for i, c in enumerate(plan.configs) if i not in set(idx)]
-        decks.append(write_ssin(cfgs, ion.Z, lam, mode=mode, mpnch=0))
+        # removing a group can remove an orbital (or the highest l): keep the λ of what is left
+        if mode == "orbital":
+            lam_g = [lam[orbs.index(o)] for o in orbitals_used(cfgs)]
+        else:
+            lam_g = lam[:n_lambda(cfgs, "l")]
+        decks.append(write_ssin(cfgs, ion.Z, lam_g, mode=mode, mpnch=0, closed_core=args.closed_core))
         names.append(g.replace("^", "").replace("+", "_"))
     log(f"prune test: {len(decks)} runs ({', '.join(g for g, _ in variants)})")
     res = run_batch(decks, os.path.join(iondir, "prune"), os.path.abspath(args.binary),
@@ -236,7 +251,10 @@ def main(argv=None):
         sp.add_argument("--n-max", type=int, default=4)
         sp.add_argument("--l-max", type=int, default=3)
         sp.add_argument("--max-exc", type=int, default=2)
-        sp.add_argument("--doubles", default="paired", choices=["paired", "all"])
+        sp.add_argument("--doubles", default="complex", choices=["complex", "paired", "all"],
+                        help="complex (default): doubles only within the outer shell; paired: also into higher shells (slow)")
+        sp.add_argument("--closed-core", action="store_true",
+                        help="declare the inner shells that are full in every configuration closed on the first card")
         sp.add_argument("--e-max", type=float, default=None, help="ignore NIST levels above this (Ry)")
         sp.add_argument("--drop", default=None, help="comma-separated config indices to drop")
         sp.add_argument("--mode", default="l", choices=["l", "orbital"])
@@ -270,9 +288,17 @@ def main(argv=None):
     s.add_argument("--resume", action="store_true")
     s.add_argument("--init-lambdas", default=None)
     s.add_argument("--keep-runs", action="store_true")
+    s.add_argument("--no-restart", action="store_true",
+                   help="repeat the angular algebra in every run instead of saving it once (slower, same energies)")
     s.set_defaults(fn=cmd_tune)
     s = sub.add_parser("full"); common(s)
     s.add_argument("--lambdas", required=True, help="comma-separated λ, or 'best' to read history_<mode>.json")
+    s.add_argument("--e1-only", action="store_true",
+                   help="skip the forbidden E2/M1 transitions (about twice as fast; the E1 data and NORAD tables "
+                        "are unchanged, but lifetimes of metastable levels need E2/M1)")
+    s.add_argument("--all-transitions", action="store_true",
+                   help="radiative data between all levels, including those of the correlation configurations "
+                        "(much slower; by default only levels whose leading configuration is a NIST one)")
     s.set_defaults(fn=cmd_full)
     s = sub.add_parser("prune"); common(s)
     s.add_argument("--lambdas", required=True, help="comma-separated λ, or 'best'")

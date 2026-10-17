@@ -53,8 +53,16 @@ def _prepare(workdir: str, binary: str, deck_text: str) -> tuple[str, str]:
 
 def run_structx(deck_text: str, workdir: str, binary: str, *,
                 stop_after_levels: bool = True, timeout: float | None = 1800,
-                poll: float = 0.25, keep_fort7: bool = False) -> RunResult:
+                poll: float = 0.25, keep_fort7: bool = False,
+                restart_file: str | None = None) -> RunResult:
+    """restart_file: a saved fort.10 (angular algebra) to read back; the deck must
+    then carry restart code 4 (deck.set_restart)."""
     local, ssin = _prepare(workdir, binary, deck_text)
+    f10 = os.path.join(workdir, "fort.10")
+    if os.path.lexists(f10):
+        os.remove(f10)
+    if restart_file:
+        os.symlink(os.path.abspath(restart_file), f10)
     out_path = os.path.join(workdir, "ssout")
     t0 = time.time()
     with open(ssin) as fin, open(out_path, "wb") as fout:
@@ -95,6 +103,8 @@ def run_structx(deck_text: str, workdir: str, binary: str, *,
             p = os.path.join(workdir, junk)
             if os.path.exists(p):
                 os.remove(p)
+    if restart_file and os.path.islink(f10):
+        os.remove(f10)
     res = RunResult(workdir, out_path, elapsed, ok=False, stopped_early=stopped,
                     timed_out=timed_out, returncode=proc.returncode)
     if timed_out:
@@ -102,6 +112,10 @@ def run_structx(deck_text: str, workdir: str, binary: str, *,
         return res
     text = so.read(out_path)
     res.configs = so.parse_configs(text)
+    if not res.configs and restart_file and os.path.exists(restart_file + ".ssout"):
+        # a restarted run skips the algebra and so does not print the configuration
+        # list; read it from the output of the run that saved the algebra
+        res.configs = so.parse_configs(so.read(restart_file + ".ssout"))
     res.levels = so.parse_levels(text, res.configs)
     res.scale_factors = so.parse_scale_factors(text)
     res.ok = len(res.levels) > 1

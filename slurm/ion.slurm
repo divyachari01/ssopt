@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
 # One ion, the whole tuning pipeline, one job:
-#     per-l tune  ->  per-orbital tune (seeded)  ->  prune at the orbital best
+#     per-l tune  ->  per-orbital tune (seeded)
 #   sbatch slurm/ion.slurm "Fe XVII"
 # A-values need the (slow, single-core) full run: sbatch slurm/full.slurm "Fe XVII" orbital best
 # =============================================================================
@@ -40,5 +40,6 @@ PY
 )
 python -m ssopt.cli $COMMON tune "$ION" --mode orbital $TUNE --init-lambdas "$SEED"
 
-python -m ssopt.cli $COMMON prune "$ION" --mode orbital --lambdas best --workers $SLURM_CPUS_PER_TASK --n-max $NMAX
+# optional check of which correlation groups matter (one batch of full-cost runs):
+# python -m ssopt.cli $COMMON prune "$ION" --mode orbital --lambdas best --workers $SLURM_CPUS_PER_TASK --n-max $NMAX
 echo "end=$(date)"

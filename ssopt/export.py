@@ -158,6 +158,8 @@ def relabel_from_nist(levels, ion, iondir, cf_configs, data_dir, match_key="j", 
         c = [x for x in cands if (x.twoSp1, x.L) == term]
         return min(c, key=lambda x: abs(x.E - E)) if c else None
 
+    decay = _decay_scorer(levels, matches, nl, ion, iondir, data_dir)
+
     new = {}
     for m in matches:
         d, lv = nl[m.nist_idx], levels[m.comp_idx]
@@ -168,7 +170,14 @@ def relabel_from_nist(levels, ion, iondir, cf_configs, data_dir, match_key="j", 
         X, Y = (lv.twoSp1, lv.L), (d.twoSp1, d.L)
         d2 = nearest(nist_by.get(ss_bucket(lv), []), lv.E, X)      # NIST level with SS's term
         lv2 = nearest(ss_by.get(nist_bucket(d), []), d.E, Y)       # SS level with NIST's term
-        if d2 is None and lv2 is None:
+        # Decay test first: NIST transition rates into and out of these levels say which
+        # SS level is which, independently of how close the energies are. A level that
+        # carries the wrong label decays like the other term (e.g. a 3S that talks to
+        # 3P0,1,2 against a 1P that talks to 1D2), typically off by a factor of 10 or more.
+        verdict = decay(lv, d, lv2, d2) if decay else None
+        if verdict is not None:
+            accept = verdict
+        elif d2 is None and lv2 is None:
             accept = True                                          # nothing to respect: only option
         else:
             cost_keep = (rel(lv.E - d2.E, d2.E) if d2 else 0.0) + (rel(lv2.E - d.E, d.E) if lv2 else 0.0)
@@ -469,6 +478,65 @@ def main(argv=None):
         except FileNotFoundError as e:
             print(f"{s}: skipped ({e})")
 
+
+
+
+def _decay_scorer(levels, matches, nl, ion, iondir, data_dir, margin=0.15):
+    """Return f(lv, d, lv2, d2) -> True (swap labels), False (keep), None (no evidence).
+
+    E1 decays obey the LS selection rules for the dominant component of a level:
+    dS = 0 and |dL| <= 1 (not L = 0 -> 0). A level that carries the wrong label therefore
+    decays like the other term: a 3S1 sends its rate to 3P0,1,2, a 1P1 to 1D2 and 1S0;
+    a 3D3 decays to 3P2, a 3F3 hardly does. For SS level K and a candidate term (S, L),
+    allowed(K, S, L) is the fraction of K's E1 rate that goes to lower levels it could
+    reach in LS coupling with that term (lower levels take the NIST label when matched,
+    otherwise the SUPERSTRUCTURE label). The labels are swapped when the NIST-paired
+    assignment explains the decays better than the label-respecting one by more than
+    `margin` (summed fractions), kept when it is the other way round, and left to the
+    energy rule when neither level has E1 decays to compare."""
+    from .ssout import parse_e1
+    src = os.path.join(iondir, "ssout.full.ss")
+    if not os.path.exists(src):
+        src = os.path.join(iondir, "ssout.full")
+    try:
+        with open(src, errors="replace") as f:
+            e1 = parse_e1(f.read())
+    except FileNotFoundError:
+        return None
+    if not e1:
+        return None
+    term_of = {lv.K: (lv.twoSp1, lv.L) for lv in levels}
+    for m in matches:                                    # trust NIST for matched levels
+        d = nl[m.nist_idx]
+        if d.twoSp1 is not None and d.L is not None and "?" not in d.term:
+            term_of[levels[m.comp_idx].K] = (d.twoSp1, d.L)
+    out = defaultdict(list)                              # K -> [(lower K, A)]
+    for tr in e1:
+        if tr.A and tr.A > 0:
+            out[tr.K].append((tr.KP, tr.A))
+
+    def allowed(K, S, L):
+        tot = sum(A for _, A in out.get(K, []))
+        if tot <= 0:
+            return None
+        ok = sum(A for Kp, A in out[K] if Kp in term_of and term_of[Kp][0] == S
+                 and abs(term_of[Kp][1] - L) <= 1 and not (L == 0 and term_of[Kp][1] == 0))
+        return ok / tot
+
+    def verdict(lv, d, lv2, d2):
+        X, Y = (lv.twoSp1, lv.L), (d.twoSp1, d.L)
+        sw = [allowed(lv.K, *Y)] + ([allowed(lv2.K, *X)] if lv2 is not None else [])
+        kp = [allowed(lv.K, *X)] + ([allowed(lv2.K, *Y)] if lv2 is not None else [])
+        pairs = [(a, b) for a, b in zip(sw, kp) if a is not None and b is not None]
+        if not pairs:
+            return None
+        s_sw, s_kp = sum(a for a, _ in pairs), sum(b for _, b in pairs)
+        if s_sw > s_kp + margin:
+            return True
+        if s_kp > s_sw + margin:
+            return False
+        return None
+    return verdict
 
 if __name__ == "__main__":
     main()
