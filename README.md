@@ -10,14 +10,14 @@ tables in the NORAD formats. Nothing is set by hand for each ion.
 
 * [How to use it](#how-to-use-it)
 * [The science](#the-science)
+* [Related work](#related-work)
 * [Citing, license and references](#citing)
 
 ---
 
 ## How to use it
 
-Follow the steps in order. Every command is typed in a terminal on your
-cluster, and after step 1 every command is run from inside the `ssopt` folder.
+All commands below are run from inside the `ssopt` folder.
 
 ### Step 1: get the code
 
@@ -26,9 +26,7 @@ git clone https://github.com/divyachari01/ssopt.git
 cd ssopt
 ```
 
-This makes a folder called `ssopt`. (You can also download the ZIP from the
-GitHub page and unzip it.) From now on, always start with `cd ssopt` so that
-you are inside this folder.
+(Or download the ZIP from the GitHub page and unzip it.)
 
 ### Step 2: put `structx` in the same folder
 
@@ -76,8 +74,8 @@ If it does not print `ok`, load your cluster's Python module (often
 ### Step 4: tell the job scripts about your cluster (once)
 
 The scripts in `slurm/` work on any cluster that uses Slurm. If your cluster
-needs an account (allocation) name, or a module for Python, add these two lines
-to the file `~/.bashrc` and then log out and back in:
+needs an account (allocation) name or a Python module, add these lines
+to `~/.bashrc`:
 
 ```bash
 export SBATCH_ACCOUNT=<your allocation>
@@ -86,27 +84,21 @@ export SSOPT_MODULES="python"
 
 ### Step 5: run one ion
 
-Ions are written the way NIST writes them: the element, a space, and a Roman
-numeral (`"Ni XV"` is Ni¹⁴⁺, `"Fe XVII"` is Fe¹⁶⁺, `"O I"` is neutral oxygen).
-Keep the quotation marks.
+Ions are named as in NIST, for example `"Ni XV"`, `"Fe XVII"` or `"O I"`.
 
 ```bash
 python -m ssopt.cli fetch "Ni XV"                            # 1. download the NIST data for this ion
 sbatch slurm/ion.slurm "Ni XV" 4 --core-bounds 0.8,1.6       # 2. tune λ (a few minutes)
 ```
 
-Wait until the tuning job has finished. You can see your jobs with
-`squeue -u $USER`, and the job is done when it no longer appears there. Then:
+When the tuning job has finished (`squeue -u $USER` no longer lists it):
 
 ```bash
 sbatch slurm/full.slurm "Ni XV" orbital best j               # 3. full run with A-values, and the NORAD tables
 ```
 
-That is all. The inner shells (1s² and 2s²2p⁶) are left open in this run,
-which is the default and gives the best agreement for most ions.
-
-If a job fails, its log file is in the `ssopt` folder, named
-`ssopt_ion_<job number>.log` or `ssopt_full_<job number>.log`.
+The inner shells (1s² and 2s²2p⁶) are left open by default. The job logs are
+`ssopt_ion_<job id>.log` and `ssopt_full_<job id>.log`.
 
 ### Optional: close the inner shells
 
@@ -125,16 +117,15 @@ compare both for the ions you care about.
 
 ### Optional: run many ions at once
 
-Write the ions in a text file, one per line (for example `my_ions.txt` with the
-lines `Ni XV` and `Fe XVII`), and run:
+List the ions in a text file, one per line, and run:
 
 ```bash
 bash slurm/sweep.sh my_ions.txt --core-bounds 0.8,1.6                 # inner shells open
 bash slurm/sweep.sh my_ions.txt --core-bounds 0.8,1.6 --closed-core   # inner shells closed
 ```
 
-This downloads the NIST data, submits the tuning jobs, and starts each full run
-by itself as soon as its tuning is done. Ions that are already tuned are
+This downloads the NIST data, submits the tuning jobs and starts each full run
+when its tuning is done. Ions that are already tuned are
 skipped. To keep a set of runs in its own folder, put `WORKDIR=<name>` in front,
 for example `WORKDIR=run_closed bash slurm/sweep.sh my_ions.txt ...`.
 
@@ -152,7 +143,7 @@ The results for one ion are in `work/<ion>/` (for Ni XV, `work/ni15/`):
 The level and transition tables in the NORAD formats are in the folder
 `norad_ss/` (for Ni XV, `norad_ss/ni15.*.txt`).
 
-### Other options
+### Useful options
 
 | Option | What it does |
 |---|---|
@@ -229,6 +220,22 @@ experiment and SUPERSTRUCTURE input conventions is in
 
 ---
 
+## Related work
+
+Other atomic codes have also been tuned against NIST with a learned model.
+Ferreira da Silva et al. (2025) use Bayesian optimisation to tune the Flexible
+Atomic Code for lanthanide and actinide ions. Ma et al. (2024) use
+machine-learning models to correct the parameters of the Cowan code for
+neutral ytterbium. AUTOSTRUCTURE can also adjust its λ
+internally (Badnell 2011). It does this by minimising an energy functional, so
+the result is variational rather than a fit to observation.
+
+`ssopt` differs from these in four ways. It works on SUPERSTRUCTURE's λ for
+each orbital, and it models every level energy rather than only the overall
+error. It also builds the configuration list and the pairing with NIST levels
+from the NIST list itself, with no input per ion. Finally, it tests the
+results against measured lifetimes.
+
 ## Citing
 
 If you use this code or its results, please cite the software until the
@@ -281,9 +288,12 @@ Data
 
 Related methods
 
-* R. Ferreira da Silva et al., Systematic Bayesian Optimization for Atomic
-  Structure Calculations of Heavy Elements, arXiv:2502.13250 (2025).
-* K. Ma et al., Machine Learning-Assisted Hartree-Fock Approach for Energy
-  Level Calculations in the Neutral Ytterbium Atom, Entropy 26, 962 (2024).
+* R. Ferreira da Silva, A. Flörs, L. Leitão, J. P. Marques, J. M. Sampaio,
+  G. Martínez-Pinedo, Systematic Bayesian Optimization for Atomic Structure
+  Calculations of Heavy Elements, arXiv:2502.13250 (2025),
+  https://arxiv.org/abs/2502.13250
+* K. Ma, C. Yang, J. Zhang, Y. Li, G. Jiang, J. Chai, Machine Learning-Assisted
+  Hartree-Fock Approach for Energy Level Calculations in the Neutral Ytterbium
+  Atom, Entropy 26, 962 (2024), https://doi.org/10.3390/e26110962
 * N. R. Badnell, A Breit-Pauli distorted wave implementation for AUTOSTRUCTURE,
-  Comput. Phys. Commun. 182, 1528 (2011).
+  Comput. Phys. Commun. 182, 1528 (2011)
