@@ -16,95 +16,154 @@ tables in the NORAD formats. Nothing is set by hand for each ion.
 
 ## How to use it
 
-### What you need
+Follow the steps in order. Every command is typed in a terminal on your
+cluster, and after step 1 every command is run from inside the `ssopt` folder.
 
-1. **`structx`, the compiled SUPERSTRUCTURE program.** It is not part of this
-   repository. Get the Fortran source `struct.f` from the code's authors (for
-   example through Prof. Sultana Nahar's group at Ohio State or the Iron
-   Project) and compile it:
-
-   ```bash
-   gfortran -O2 -std=legacy -ffixed-line-length-72 struct.f -o structx
-   ```
-
-   The Intel compiler (`ifort -O2 struct.f -o structx`) gives the same results.
-   Put `structx` in the top folder of this repository, or link to it with
-   `ln -s /path/to/structx structx`. If a very large deck stops with a message
-   such as `INCREASE MAXUC` or `MAXTR .GE. ... IS REQUIRED`, raise the named
-   array sizes in `struct.f` and compile again.
-2. **Python 3.10 or newer** with numpy and scipy.
-3. **A cluster that uses Slurm**, for the scripts in `slurm/`. They contain no
-   account or cluster names, so set these once in your shell (for example in
-   `~/.bashrc`) if your cluster needs them:
-
-   ```bash
-   export SBATCH_ACCOUNT=<your allocation>
-   export SSOPT_MODULES="python"        # modules to load inside each job
-   ```
-
-   The scripts are short wrappers around `python -m ssopt.cli`, so the same
-   commands also run on a workstation.
-
-### Run one ion
+### Step 1: get the code
 
 ```bash
-python -m ssopt.cli fetch "Ni XV"                                  # NIST data -> data/ (needs internet, once per ion)
-sbatch slurm/ion.slurm "Ni XV" 4 --core-bounds 0.8,1.6             # tune λ (48 cores, 1 to 7 minutes)
-sbatch slurm/full.slurm "Ni XV" orbital best j --core-bounds 0.8,1.6   # full run at the tuned λ, then the NORAD tables
+git clone https://github.com/divyachari01/ssopt.git
+cd ssopt
 ```
 
-Start the full run after the tuning job has finished, or chain the two with
-`--dependency=afterok:<tuning job id>`. The inner shells (1s², 2s²2p⁶) are left
-open in this default run, which matches NIST best for most low-charge ions.
+This makes a folder called `ssopt`. (You can also download the ZIP from the
+GitHub page and unzip it.) From now on, always start with `cd ssopt` so that
+you are inside this folder.
 
-### Run one ion with the inner shells closed
+### Step 2: put `structx` in the same folder
 
-Add `--closed-core` to both commands:
+`structx` is the SUPERSTRUCTURE program itself. It is not included here, so
+get the Fortran source `struct.f` from the code's authors (for example through
+Prof. Sultana Nahar's group at Ohio State or the Iron Project) and compile it:
+
+```bash
+gfortran -O2 -std=legacy -ffixed-line-length-72 struct.f -o structx
+```
+
+Then put `structx` **inside the `ssopt` folder**, next to this README. If it
+already sits somewhere else, a link works too:
+
+```bash
+ln -s /path/to/structx structx
+```
+
+Your folder should now look like this:
+
+```
+ssopt/
+    README.md
+    structx        <- the SUPERSTRUCTURE program, in the same folder
+    ssopt/         <- the Python code
+    slurm/         <- the job scripts
+    ...
+```
+
+If a very large calculation later stops with a message such as
+`INCREASE MAXUC`, raise that number in `struct.f` and compile again.
+
+### Step 3: check Python
+
+You need Python 3.10 or newer with numpy and scipy. Check with:
+
+```bash
+python -c "import numpy, scipy; print('ok')"
+```
+
+If it does not print `ok`, load your cluster's Python module (often
+`module load python`) or install the two packages with
+`pip install --user numpy scipy`.
+
+### Step 4: tell the job scripts about your cluster (once)
+
+The scripts in `slurm/` work on any cluster that uses Slurm. If your cluster
+needs an account (allocation) name, or a module for Python, add these two lines
+to the file `~/.bashrc` and then log out and back in:
+
+```bash
+export SBATCH_ACCOUNT=<your allocation>
+export SSOPT_MODULES="python"
+```
+
+### Step 5: run one ion
+
+Ions are written the way NIST writes them: the element, a space, and a Roman
+numeral (`"Ni XV"` is Ni¹⁴⁺, `"Fe XVII"` is Fe¹⁶⁺, `"O I"` is neutral oxygen).
+Keep the quotation marks.
+
+```bash
+python -m ssopt.cli fetch "Ni XV"                            # 1. download the NIST data for this ion
+sbatch slurm/ion.slurm "Ni XV" 4 --core-bounds 0.8,1.6       # 2. tune λ (a few minutes)
+```
+
+Wait until the tuning job has finished. You can see your jobs with
+`squeue -u $USER`, and the job is done when it no longer appears there. Then:
+
+```bash
+sbatch slurm/full.slurm "Ni XV" orbital best j               # 3. full run with A-values, and the NORAD tables
+```
+
+That is all. The inner shells (1s² and 2s²2p⁶) are left open in this run,
+which is the default and gives the best agreement for most ions.
+
+If a job fails, its log file is in the `ssopt` folder, named
+`ssopt_ion_<job number>.log` or `ssopt_full_<job number>.log`.
+
+### Optional: close the inner shells
+
+Add `--closed-core` to the tuning command and to the full-run command:
 
 ```bash
 sbatch slurm/ion.slurm "Ni XV" 4 --core-bounds 0.8,1.6 --closed-core
-sbatch slurm/full.slurm "Ni XV" orbital best j --core-bounds 0.8,1.6 --closed-core
+sbatch slurm/full.slurm "Ni XV" orbital best j --closed-core
 ```
 
-The full inner shells are then declared closed on the first card of the deck,
-which makes every run 2 to 3 times faster. It also changes the Breit-Pauli
-energies, because SUPERSTRUCTURE treats a closed core differently. On our test
-ions this helped the highly charged ions and hurt some low-charge Si- and
-Al-like ions, so compare both for the ions you care about.
+The full inner shells are then declared closed in the deck, which makes every
+run 2 to 3 times faster. It also changes the Breit-Pauli energies, because
+SUPERSTRUCTURE treats a closed core differently. On our test ions this helped
+the highly charged ions and hurt some low-charge Si- and Al-like ions, so
+compare both for the ions you care about.
 
-### Run a list of ions
+### Optional: run many ions at once
+
+Write the ions in a text file, one per line (for example `my_ions.txt` with the
+lines `Ni XV` and `Fe XVII`), and run:
 
 ```bash
-bash slurm/sweep.sh my_ions.txt --core-bounds 0.8,1.6               # one ion name per line, e.g. "Ni XV"
-bash slurm/sweep.sh my_ions.txt --core-bounds 0.8,1.6 --closed-core # the same with the inner shells closed
+bash slurm/sweep.sh my_ions.txt --core-bounds 0.8,1.6                 # inner shells open
+bash slurm/sweep.sh my_ions.txt --core-bounds 0.8,1.6 --closed-core   # inner shells closed
 ```
 
-`sweep.sh` fetches the NIST data, submits one tuning job per ion and chains
-each full run to its tuning job. Ions that are already tuned are skipped. To
-keep a set of runs in its own folder, put `WORKDIR=<folder>` in front, for
-example `WORKDIR=run_closed bash slurm/sweep.sh ...`.
+This downloads the NIST data, submits the tuning jobs, and starts each full run
+by itself as soon as its tuning is done. Ions that are already tuned are
+skipped. To keep a set of runs in its own folder, put `WORKDIR=<name>` in front,
+for example `WORKDIR=run_closed bash slurm/sweep.sh my_ions.txt ...`.
 
 ### Where the results are
 
-Everything for one ion goes into `work/<ion>/` (for Ni XV, `work/ni15/`):
+The results for one ion are in `work/<ion>/` (for Ni XV, `work/ni15/`):
 
 | File | What it is |
 |---|---|
-| `ssin.tuned_orbital` | the deck with the tuned λ; `./structx < ssin.tuned_orbital > ssout` reruns it |
 | `levels_orbital.txt` | every computed level next to its NIST value, and the relative RMS error |
+| `ssin.tuned_orbital` | the SUPERSTRUCTURE input with the tuned λ; `./structx < ssin.tuned_orbital > ssout` runs it again |
 | `ssout.full` | the full SUPERSTRUCTURE output at the tuned λ, with level labels matched to NIST |
 | `report.txt`, `avalues.txt` | the A-values compared with NIST (and NORAD where available) |
-| `norad_ss/<ion>.*.txt` | level and transition tables in the NORAD formats |
 
-### Useful options
+The level and transition tables in the NORAD formats are in the folder
+`norad_ss/` (for Ni XV, `norad_ss/ni15.*.txt`).
+
+### Other options
 
 | Option | What it does |
 |---|---|
 | `--closed-core` | close the full inner shells (faster, changes the Breit-Pauli energies) |
-| `--doubles paired` | also include double excitations into higher shells (4s² to 4f²); slower, the old default |
-| `--all-transitions` | full run: compute transitions between all levels, not only NIST-type levels (much slower) |
+| `--doubles paired` | also include double excitations into higher shells (4s² to 4f²); slower |
+| `--all-transitions` | full run: transitions between all levels, not only NIST-type levels (much slower) |
 | `--e1-only` | full run: skip the forbidden E2/M1 lines (about twice as fast) |
 | `--n-max 5` | allow orbitals up to n = 5 (default 4) |
+
+`--core-bounds 0.8,1.6` in the commands above is the range λ may take for the
+inner orbitals; it is the setting all our tests used.
 
 ---
 
