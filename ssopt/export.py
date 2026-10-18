@@ -107,7 +107,8 @@ def load_run(iondir: str):
     return text, cfgs, levels, e1
 
 
-def relabel_from_nist(levels, ion, iondir, cf_configs, data_dir, match_key="j", factor=3.0, min_cost=0.25):
+def relabel_from_nist(levels, ion, iondir, cf_configs, data_dir, match_key="j", factor=3.0, min_cost=0.25,
+                      max_offset=0.10):
     """Give a level the NIST LS label when the energies force it.
 
     SUPERSTRUCTURE names a level after its largest LS component; for strongly mixed
@@ -123,7 +124,9 @@ def relabel_from_nist(levels, ion, iondir, cf_configs, data_dir, match_key="j", 
     `factor` times cheaper AND the label-respecting pairing would be off by more
     than `min_cost` (25%) of the level energies, i.e. the disagreement is far larger
     than any deck error. Close terms that merely cross because of a few-percent deck
-    error keep the SUPERSTRUCTURE label; so do levels without a NIST partner."""
+    error keep the SUPERSTRUCTURE label; so do levels without a NIST partner, and levels
+    more than `max_offset` (10%) away from their NIST partner, which are too far off to
+    be sure they are the same state."""
     from . import match as M, nist
     try:
         nl = nist.load_levels(data_dir, ion.spectroscopic, fetch_if_missing=False)
@@ -167,6 +170,8 @@ def relabel_from_nist(levels, ion, iondir, cf_configs, data_dir, match_key="j", 
             continue
         if "?" in d.term:          # NIST marks the identification itself as uncertain
             continue
+        if rel(lv.E - d.E, d.E) > max_offset:
+            continue               # too far from its NIST partner to be the same state
         X, Y = (lv.twoSp1, lv.L), (d.twoSp1, d.L)
         d2 = nearest(nist_by.get(ss_bucket(lv), []), lv.E, X)      # NIST level with SS's term
         lv2 = nearest(ss_by.get(nist_bucket(d), []), d.E, Y)       # SS level with NIST's term

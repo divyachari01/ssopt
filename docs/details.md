@@ -77,8 +77,9 @@ for core orbitals and 0.7 to 2.0 for valence orbitals (`--core-bounds`,
 
 SUPERSTRUCTURE names each level after its largest LS component. For strongly
 mixed pairs with the same configuration, parity and J, that name can flip while
-the energies are right. In Ni XV the 3s²3p² level at 0.246 Ry comes out as ¹D₂
-and the one at 0.578 Ry as ³P₂, while NIST has ³P₂ at 0.249 and ¹D₂ at 0.573.
+the energies are right. In Ni XV the 3s3p³ level at 4.626 Ry comes out as ¹P°₁
+and the one at 4.873 Ry as ³S°₁, while NIST has ³S°₁ at 4.356 and ¹P°₁ at 4.640,
+and the E1 decays of the two levels follow the NIST names.
 The optimiser pairs levels by J and energy, so it is not affected, but anything
 that reads ssout by label is.
 
@@ -92,12 +93,14 @@ a level takes the NIST label only when the evidence is clear:
 * Otherwise the energies decide, and a swap is accepted only if keeping SS's
   labels would put the levels more than 25% off and at least three times worse
   than the swap.
-* Levels whose NIST term is flagged uncertain (`?`) and levels without a NIST
-  partner keep SS's label.
+* Levels whose NIST term is flagged uncertain (`?`), levels without a NIST
+  partner, and levels more than 10% away from their NIST partner in energy keep
+  SS's label, since a level that far off may not be the same state.
 
-The original file is kept as `ssout.full.ss`. Energies, eigenvectors and the
-radiative tables are untouched, and E1 rows refer to levels by index, so they
-stay consistent. `python swaps.py work` lists every relabelled level.
+The original file, exactly as SUPERSTRUCTURE wrote it, is kept as
+`ssout.full.ss`. Energies, eigenvectors and the radiative tables are untouched,
+and E1 rows refer to levels by index, so they stay consistent. `python swaps.py
+work` lists every relabelled level.
 
 ## Lifetimes against experiment
 

@@ -138,7 +138,8 @@ The results for one ion are in `work/<ion>/` (for Ni XV, `work/ni15/`):
 |---|---|
 | `levels_orbital.txt` | every computed level next to its NIST value, and the relative RMS error |
 | `ssin.tuned_orbital` | the SUPERSTRUCTURE input with the tuned λ; `./structx < ssin.tuned_orbital > ssout` runs it again |
-| `ssout.full` | the full SUPERSTRUCTURE output at the tuned λ, with level labels matched to NIST |
+| `ssout.full` | the full SUPERSTRUCTURE output at the tuned λ, with level labels matched to NIST where SUPERSTRUCTURE's names are clearly swapped |
+| `ssout.full.ss` | the same output exactly as SUPERSTRUCTURE wrote it, with its original labels |
 | `report.txt`, `avalues.txt` | the A-values compared with NIST (and NORAD where available) |
 
 The level and transition tables in the NORAD formats are in the folder
