@@ -30,9 +30,10 @@ cd ssopt
 
 ### Step 2: put `structx` in the same folder
 
-`structx` is the SUPERSTRUCTURE program itself. It is not included here, so
-get the Fortran source `struct.f` from the code's authors (for example through
-Prof. Sultana Nahar's group at Ohio State or the Iron Project) and compile it:
+`structx` is the SUPERSTRUCTURE program itself. It is not included here, but
+the Fortran source `struct.f` can be downloaded from the programs section of
+[Prof. Sultana Nahar's teaching page](https://www.astronomy.ohio-state.edu/nahar.1/teaching.html#program),
+which also has her notes on running the code. Compile it with:
 
 ```bash
 gfortran -O2 -std=legacy -ffixed-line-length-72 struct.f -o structx
