@@ -72,20 +72,26 @@ If it does not print `ok`, load your cluster's Python module (often
 `module load python`) or install the two packages with
 `pip install --user numpy scipy`.
 
-### Step 4: set up your cluster account (once)
+### Step 4: tell Slurm your project code (once)
 
-The job scripts in `slurm/` are submitted to the cluster with `sbatch`. Most
-clusters need to know which project to charge the jobs to, and which module
-gives you Python. Add these two lines to the end of your `~/.bashrc`, with your
-own values, and then run `source ~/.bashrc` (or log in again):
+The commands in step 5 submit jobs with `sbatch`. This is the same whether you
+log in with `ssh` or use a terminal in a web portal such as OSC OnDemand. Many
+clusters, including OSC, need each job to say which project its hours are
+charged to. Save your project code once so that every job uses it:
 
 ```bash
-export SBATCH_ACCOUNT=<your project code>   # on OSC this looks like PAS1234
-export SSOPT_MODULES="python"               # the module that loads Python with numpy and scipy
+echo 'export SBATCH_ACCOUNT=<your project code>' >> ~/.bashrc    # on OSC this looks like PAS1234
+source ~/.bashrc
 ```
 
-If your cluster does not use project codes, leave out the first line. If Python
-already works without loading a module, leave out the second.
+If your cluster loads Python as a module, also save the module name, so that
+each job loads it too. Use the full name with the version, as listed by
+`module avail python` (on OSC Cardinal this is `python/3.12`):
+
+```bash
+echo 'export SSOPT_MODULES="python/3.12"' >> ~/.bashrc
+source ~/.bashrc
+```
 
 ### Step 5: run one ion
 
