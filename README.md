@@ -72,34 +72,55 @@ If it does not print `ok`, load your cluster's Python module (often
 `module load python`) or install the two packages with
 `pip install --user numpy scipy`.
 
-### Step 4: tell the job scripts about your cluster (once)
+### Step 4: set up your cluster account (once)
 
-The scripts in `slurm/` work on any cluster that uses Slurm. If your cluster
-needs an account (allocation) name or a Python module, add these lines
-to `~/.bashrc`:
+The job scripts in `slurm/` are submitted to the cluster with `sbatch`. Most
+clusters need to know which project to charge the jobs to, and which module
+gives you Python. Add these two lines to the end of your `~/.bashrc`, with your
+own values, and then run `source ~/.bashrc` (or log in again):
 
 ```bash
-export SBATCH_ACCOUNT=<your allocation>
-export SSOPT_MODULES="python"
+export SBATCH_ACCOUNT=<your project code>   # on OSC this looks like PAS1234
+export SSOPT_MODULES="python"               # the module that loads Python with numpy and scipy
 ```
+
+If your cluster does not use project codes, leave out the first line. If Python
+already works without loading a module, leave out the second.
 
 ### Step 5: run one ion
 
-Ions are named as in NIST, for example `"Ni XV"`, `"Fe XVII"` or `"O I"`.
+Ions are named as in NIST, for example `"Ni XV"` (Ni¹⁴⁺), `"Fe XVII"` or
+`"O I"`. Running one ion takes three commands, shown here for Ni XV.
 
-```bash
-python -m ssopt.cli fetch "Ni XV"                            # 1. download the NIST data for this ion
-sbatch slurm/ion.slurm "Ni XV" 4 --core-bounds 0.8,1.6       # 2. tune λ (a few minutes)
-```
+1. Download the NIST data for the ion. This needs internet, so run it on the
+   login node:
 
-When the tuning job has finished (`squeue -u $USER` no longer lists it):
+   ```bash
+   python -m ssopt.cli fetch "Ni XV"
+   ```
 
-```bash
-sbatch slurm/full.slurm "Ni XV" orbital best j               # 3. full run with A-values, and the NORAD tables
-```
+2. Tune λ. This submits a job that takes a few minutes:
 
-The inner shells (1s² and 2s²2p⁶) are left open by default. The job logs are
-`ssopt_ion_<job id>.log` and `ssopt_full_<job id>.log`.
+   ```bash
+   sbatch slurm/ion.slurm "Ni XV" 4 --core-bounds 0.8,1.6
+   ```
+
+   Here `4` is the highest n of the orbitals in the deck, and
+   `--core-bounds 0.8,1.6` is the range λ may take for the inner orbitals.
+
+3. When the tuning job has finished (`squeue -u $USER` no longer lists it), run
+   the full calculation with the A-values and the NORAD tables:
+
+   ```bash
+   sbatch slurm/full.slurm "Ni XV" orbital best j
+   ```
+
+   Here `orbital best j` means: use one λ per orbital, take the best λ found by
+   the tuning, and pair the levels with NIST by J.
+
+The inner shells (1s² and 2s²2p⁶) are left open by default. The results are in
+`work/ni15/` (see below), and the job logs are `ssopt_ion_<job id>.log` and
+`ssopt_full_<job id>.log`.
 
 ### Optional: close the inner shells
 
@@ -155,8 +176,6 @@ The level and transition tables in the NORAD formats are in the folder
 | `--e1-only` | full run: skip the forbidden E2/M1 lines (about twice as fast) |
 | `--n-max 5` | allow orbitals up to n = 5 (default 4) |
 
-`--core-bounds 0.8,1.6` in the commands above is the range λ may take for the
-inner orbitals; it is the setting all our tests used.
 
 ---
 
