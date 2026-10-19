@@ -105,43 +105,55 @@ Ions are named as in NIST, for example `"Ni XV"` (Ni¹⁴⁺), `"Fe XVII"` or
    python -m ssopt.cli fetch "Ni XV"
    ```
 
-2. Tune λ. This submits a job that takes a few minutes:
+2. Tune λ. This submits a job that takes a few minutes. Pick one of these two
+   commands.
+
+   Inner shells open (the default):
 
    ```bash
    sbatch slurm/ion.slurm "Ni XV" 4 --core-bounds 0.8,1.6
    ```
 
+   Inner shells closed (faster):
+
+   ```bash
+   sbatch slurm/ion.slurm "Ni XV" 4 --core-bounds 0.8,1.6 --closed-core
+   ```
+
    Here `4` is the highest n of the orbitals in the deck, and
    `--core-bounds 0.8,1.6` is the range λ may take for the inner orbitals.
+   `--closed-core` declares the full inner shells (for Ni XV, 1s² and 2s²2p⁶)
+   closed, which makes every run 2 to 3 times faster. It also changes the
+   Breit-Pauli energies. On our test ions it helped the highly charged ions and
+   hurt some low-charge Si- and Al-like ions, so for the ions you care about it
+   is worth trying both.
 
 3. When the tuning job has finished (`squeue -u $USER` no longer lists it), run
-   the full calculation with the A-values and the NORAD tables:
+   the full calculation with the A-values and the NORAD tables. Use the same
+   choice as in step 2.
+
+   Inner shells open:
 
    ```bash
    sbatch slurm/full.slurm "Ni XV" orbital best j
    ```
 
+   Inner shells closed:
+
+   ```bash
+   sbatch slurm/full.slurm "Ni XV" orbital best j --closed-core
+   ```
+
    Here `orbital best j` means: use one λ per orbital, take the best λ found by
    the tuning, and pair the levels with NIST by J.
 
-The inner shells (1s² and 2s²2p⁶) are left open by default. The results are in
-`work/ni15/` (see below), and the job logs are `ssopt_ion_<job id>.log` and
-`ssopt_full_<job id>.log`.
+The results are in `work/ni15/` (see below), and the job logs are
+`ssopt_ion_<job id>.log` and `ssopt_full_<job id>.log`.
 
-### Optional: close the inner shells
-
-Add `--closed-core` to the tuning command and to the full-run command:
-
-```bash
-sbatch slurm/ion.slurm "Ni XV" 4 --core-bounds 0.8,1.6 --closed-core
-sbatch slurm/full.slurm "Ni XV" orbital best j --closed-core
-```
-
-The full inner shells are then declared closed in the deck, which makes every
-run 2 to 3 times faster. It also changes the Breit-Pauli energies, because
-SUPERSTRUCTURE treats a closed core differently. On our test ions this helped
-the highly charged ions and hurt some low-charge Si- and Al-like ions, so
-compare both for the ions you care about.
+To try both and compare, give the second run its own folder by putting
+`WORKDIR=work_closed` in front of both of its `sbatch` commands, for example
+`WORKDIR=work_closed sbatch slurm/ion.slurm "Ni XV" 4 --core-bounds 0.8,1.6 --closed-core`.
+Its results are then in `work_closed/ni15/`.
 
 ### Optional: run many ions at once
 
