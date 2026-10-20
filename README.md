@@ -261,19 +261,34 @@ experiment and SUPERSTRUCTURE input conventions is in
 
 ## Related work
 
-Other atomic codes have also been tuned against NIST with a learned model.
+Other atomic codes have also been tuned against observed levels with a learned
+model. Mendez et al. (2020) tune the atomic structure of neutral Be with a
+Bayesian method (a Tree-structured Parzen Estimator), for use in electron-impact
+collision calculations. Mendez (2021, PhD thesis) extends this with
+Gaussian-process Bayesian optimisation, and Mendez, Abdala and Mitnik (2026)
+apply it to the scaling parameters of AUTOSTRUCTURE for Be and Mg.
 Ferreira da Silva et al. (2025) use Bayesian optimisation to tune the Flexible
-Atomic Code for lanthanide and actinide ions. Ma et al. (2024) use
+Atomic Code for lanthanide and actinide ions, and Ma et al. (2024) use
 machine-learning models to correct the parameters of the Cowan code for
-neutral ytterbium. AUTOSTRUCTURE can also adjust its λ
-internally (Badnell 2011). It does this by minimising an energy functional, so
-the result is variational rather than a fit to observation.
+neutral ytterbium. Bilous, Cheung and Safronova (2024) use a neural network to
+choose the configurations for large CI calculations. AUTOSTRUCTURE can also
+adjust its λ internally (Badnell 2011). It does this by minimising an energy
+functional, so the result is variational rather than a fit to observation.
+In SUPERSTRUCTURE itself, the λ have been adjusted by hand to fit observed
+levels since Nussbaumer and Storey (1978).
 
-`ssopt` differs from these in four ways. It works on SUPERSTRUCTURE's λ for
-each orbital, and it models every level energy rather than only the overall
-error. It also builds the configuration list and the pairing with NIST levels
-from the NIST list itself, with no input per ion. Finally, it tests the
-results against measured lifetimes.
+The surrogate in `ssopt` models every level energy and computes the error from
+the predicted energies. In machine learning this is known as target-vector
+Bayesian optimisation (Uhrenholt & Jensen 2019; Astudillo & Frazier 2019;
+Plock et al. 2022), and `ssopt` applies it to atomic structure. The labelling
+of strongly mixed levels is a known problem in other codes as well, and
+Gaigalas et al. (2017) treat it for GRASP.
+
+`ssopt` differs from the atomic work above in four ways. It tunes
+SUPERSTRUCTURE, and it builds the configuration list and the pairing with NIST
+levels from the NIST list itself, with no input per ion. It has also been run
+on 119 ions across whole isoelectronic sequences, and it tests the results
+against measured lifetimes.
 
 ## Citing
 
@@ -334,5 +349,29 @@ Related methods
 * K. Ma, C. Yang, J. Zhang, Y. Li, G. Jiang, J. Chai, Machine Learning-Assisted
   Hartree-Fock Approach for Energy Level Calculations in the Neutral Ytterbium
   Atom, Entropy 26, 962 (2024), https://doi.org/10.3390/e26110962
+* A. M. P. Mendez, J. I. Di Filippo, S. D. López, D. M. Mitnik, Bayesian
+  atomic structure calculations for collisional problems, J. Phys.: Conf. Ser.
+  1412, 132027 (2020), https://doi.org/10.1088/1742-6596/1412/13/132027
+* M. P. A. Mendez, Optimización de blancos atómicos y moleculares en procesos
+  colisionales, PhD thesis, Universidad de Buenos Aires (2021),
+  https://bibliotecadigital.exactas.uba.ar/download/tesis/tesis_n6803_Mendez.pdf
+* A. Mendez, M. Abdala, D. M. Mitnik, Bayesian optimization of atomic
+  structure for collisional calculations, Proceedings of the 1st International
+  Online Conference on Atoms (MDPI, 2026), https://sciforum.net/paper/28531
+* P. Bilous, C. Cheung, M. Safronova, A neural network approach to running
+  high-precision atomic computations, Phys. Rev. A 110 (2024),
+  https://arxiv.org/abs/2408.00477
+* A. K. Uhrenholt, B. S. Jensen, Efficient Bayesian optimization for target
+  vector estimation, Proc. AISTATS 2019, PMLR 89, 2661 (2019),
+  https://proceedings.mlr.press/v89/uhrenholt19a.html
+* R. Astudillo, P. I. Frazier, Bayesian optimization of composite functions,
+  Proc. ICML 2019, PMLR 97, 354 (2019),
+  https://proceedings.mlr.press/v97/astudillo19a.html
+* M. Plock, K. Andrle, S. Burger, P.-I. Schneider, Bayesian target-vector
+  optimization for efficient parameter reconstruction, Adv. Theory Simul. 5,
+  2200112 (2022), https://doi.org/10.1002/adts.202200112
+* G. Gaigalas, C. Froese Fischer, P. Rynkun, P. Jönsson, JJ2LSJ transformation
+  and unique labeling for energy levels, Atoms 5, 6 (2017),
+  https://doi.org/10.3390/atoms5010006
 * N. R. Badnell, A Breit-Pauli distorted wave implementation for AUTOSTRUCTURE,
   Comput. Phys. Commun. 182, 1528 (2011)
