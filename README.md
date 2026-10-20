@@ -310,8 +310,8 @@ Contributors: Alain Ward (Department of Physics, The Ohio State University).
 
 ## License
 
-Copyright 2026 Divya Chari, Sultana N. Nahar and Anil K. Pradhan, The Ohio
-State University. The method and the use of SUPERSTRUCTURE follow the
+Copyright 2026 Divya Chari, Alain Ward, Sultana N. Nahar and Anil K. Pradhan,
+The Ohio State University. The method and the use of SUPERSTRUCTURE follow the
 atomic-structure work of Profs. Nahar and Pradhan's group. The code is released
 under the Creative Commons Attribution-NonCommercial 4.0 International License
 (CC BY-NC 4.0, see `LICENSE`), the same terms as NORAD-Atomic-Data. For
