@@ -9,10 +9,17 @@ produces  norad_ss/ne5.en.ls.txt   LS terms, bound-state energies (negative, Ry,
           norad_ss/ne5.f.fsm.txt   fine-structure f-values, multiplet-header layout (NORAD Si I style)
 
 Layouts follow the NORAD files (Nahar) column for column so existing readers
-work unchanged.  What SUPERSTRUCTURE cannot supply is filled honestly:
+work unchanged.  Only bound levels (below the NIST ionization limit) are
+written, as in NORAD.  What SUPERSTRUCTURE cannot supply is filled honestly:
   * the "target/core" columns hold the configuration minus its outermost
-    electron and the parent term is written as "( - )" (SS gives the level's
-    own LS term, not the core's); the level's own term is in the Terms column;
+    electron.  SS gives the level's own LS term, not the core's, so the core
+    term is filled in only where it is unique (closed shells plus at most one
+    open subshell with one electron or one hole, e.g. 2p5 -> 2Po) and is left
+    blank otherwise; the core Jt is always left blank.  Levels whose outer
+    electron is equivalent to others in its subshell (e.g. 1s2, 2s22p5) are
+    written as the whole configuration with no core, nl or EQN, as in NORAD;
+  * the line strength S is computed from gf and the transition energy
+    (S = 3 gf / dE, dE in Ry), so very weak lines are not printed as zero;
   * energies are relative to the ionization limit taken from the NIST level
     list (E = E_SS - IP); without a limit they stay ground-relative and positive
     and the header says so;
@@ -71,6 +78,50 @@ def _split_outer(cfg: dict, core: dict) -> tuple[dict, tuple[int, int]]:
     if rest[outer] == 0:
         del rest[outer]
     return rest, outer
+
+
+def norad_cfg(cfg: dict) -> str:
+    """NORAD spelling: no spaces, occupancy 1 omitted (2s22p5, 2s2p6, 1s)."""
+    return "".join(f"{n}{'spdfghik'[l]}{occ if occ > 1 else ''}" for (n, l), occ in sorted(cfg.items()) if occ)
+
+
+def _shown(cfg: dict, core: dict) -> str:
+    """Configuration without the ion's closed core, or the whole thing if nothing else is left."""
+    rest = {o: n for o, n in cfg.items() if o not in core}
+    return norad_cfg(rest) if rest else norad_cfg(cfg)
+
+
+def core_term(core_cfg: dict) -> str:
+    """LS term of the core when it is unique, else ''.  Unique: all subshells full,
+    or exactly one open subshell holding one electron or one hole."""
+    open_ = [(o, n) for o, n in core_cfg.items() if 0 < n < 2 * (2 * o[1] + 1)]
+    par = "o" if sum(o[1] * n for o, n in core_cfg.items()) % 2 else "e"
+    if not open_:
+        return f"1S{par}"
+    if len(open_) == 1:
+        (n_, l), occ = open_[0]
+        if occ in (1, 2 * (2 * l + 1) - 1):
+            return f"2{LNAME[l]}{par}"
+    return ""
+
+
+def norad_parts(cfg: dict, core: dict):
+    """(core string, core term, outer nl) for a level; outer nl is None for an
+    equivalent-electron level, which NORAD writes as the whole configuration."""
+    rest, outer = _split_outer(cfg, core)
+    if cfg[outer] > 1:
+        return _shown(cfg, core), "", None
+    return _shown(rest, core), core_term(rest), orb_str(*outer)
+
+
+def _S(tr, dE: float) -> float:
+    """Line strength from gf and the transition energy (Ry): gf = dE * S / 3."""
+    return 3.0 * abs(tr.gf) / dE if dE > 0 else abs(tr.S)
+
+
+def _J_norad(twoJ: int) -> str:
+    """NORAD J field: I5,1X for integer J, I4,'/2' for half-integer J."""
+    return f"{twoJ // 2:5d} " if twoJ % 2 == 0 else f"{twoJ:4d}/2"
 
 
 def _term(twoSp1: int, L: int, parity: int) -> str:
@@ -267,10 +318,11 @@ def write_en_ls(path, ion, cfgs, terms, ip, note):
             f.write(f" Ion ground state = {ip * RY_CM:.1f}, Eo(Ry) = {-ip:.4E} =-IP\n\n")
         f.write(f"{'State':>18s}{'E(Ry)':>19s}\n\n")
         for i, t in enumerate(terms):
-            core, outer = _split_outer(cfgs[t["CF"]], ion.core)
+            core, cterm, nl = norad_parts(cfgs[t["CF"]], ion.core)
             label = f"{let[i]}{t['S']}{LNAME[t['L']]}{'o' if t['p'] < 0 else 'e'}"
             E = t["E"] - ip if ip is not None else t["E"]
-            f.write(f"{config_str(core):<10s}( - ) {orb_str(*outer):<4s}{label:<6s}{E:12.5f}\n")
+            ct = f"({cterm})" if cterm else "     "
+            f.write(f"{core:<10s}{ct:<5s} {nl or '':<4s}{label:<6s}{E:12.5f}\n")
 
 
 def write_en_fs(path, ion, cfgs, levels, ip, note):
@@ -286,23 +338,27 @@ def write_en_fs(path, ion, cfgs, levels, ip, note):
         f.write(" Table Explanation:\n\n     T -> configuration of the level minus its outer electron\n")
         f.write("     Nlv=Number of levels\n     nl = Principal and orbital quantum numbers of the outer electron\n")
         f.write("     EQN = Effective Quantum Number.\n" + "-" * 38 + "\n\n")
-        f.write(f"  i  T(config SLpi Jt)    nl    J      E(Ry)     EQN  Terms\n\n")
+        f.write("     Core term left blank where SUPERSTRUCTURE does not fix it; core Jt not available.\n\n")
+        f.write(f"  i  T(config SLpi Jt)    nl    J      E(Ry)       EQN  Terms\n\n")
         z = ion.charge + 1
         for (twoJ, par) in sorted(blocks, key=lambda k: (k[0], -k[1])):
             lvs = sorted(blocks[(twoJ, par)], key=lambda l: l.E)
-            f.write(f"  Nlv={len(lvs):4d}           J pi = {_frac_J(twoJ):>3s} {'o' if par < 0 else 'e'}\n\n")
+            p = "o" if par < 0 else "e"
+            f.write(f"   Nlv={len(lvs):4d}           J pi = {_frac_J(twoJ):>2s} {p}\n\n")
             for i, lv in enumerate(lvs, 1):
-                core, outer = _split_outer(cfgs[lv.CF], ion.core)
+                core, cterm, nl = norad_parts(cfgs[lv.CF], ion.core)
                 E = lv.E - ip if ip is not None else lv.E
-                eqn = z / np.sqrt(-E) if (ip is not None and E < 0) else float("nan")
-                f.write(f"{i:3d} {config_str(core):<10s} ( - ) {'-':>2s} {orb_str(*outer):>4s} "
-                        f"{_frac_J(twoJ):>4s} {E:12.5E} {eqn:5.2f}  {lv.twoSp1} {LNAME[lv.L]} "
-                        f"{'o' if par < 0 else 'e'}\n")
+                if nl is None or ip is None or E >= 0:
+                    head, eqn = f"{core:<23s}", " " * 6
+                else:
+                    head, eqn = f"{core:<11s}{cterm:<3s}  {'':<3s}  {nl:<2s}", f"{z / np.sqrt(-E):6.2f}"
+                f.write(f"{i:4d} {head}{_J_norad(twoJ)}  {E:12.5E}{eqn}  {lv.twoSp1} {LNAME[lv.L]} {p}\n")
             f.write("\n")
 
 
 def write_f_ls(path, ion, cfgs, terms, levels, e1, ip):
     """LS multiplets: sum gf over the fine-structure lines between two terms; S summed; A = g-weighted."""
+    byK = levels_by_K(levels)
     K2term = {}
     for ti, t in enumerate(terms):
         for lv in t["levels"]:
@@ -315,8 +371,8 @@ def write_f_ls(path, ion, cfgs, terms, levels, e1, ip):
         lo, hi = (a, b) if terms[a]["E"] <= terms[b]["E"] else (b, a)
         m = mult[(lo, hi)]
         m["gf"] += tr.gf
-        m["S"] += abs(tr.S)
-        m["gA"] += tr.A * (levels_by_K(levels)[max(tr.K, tr.KP)].twoJ + 1)
+        m["S"] += _S(tr, abs(byK[tr.KP].E - byK[tr.K].E))
+        m["gA"] += tr.A * (byK[max(tr.K, tr.KP)].twoJ + 1)
     bysym = defaultdict(list)
     for (lo, hi), m in mult.items():
         tl, th = terms[lo], terms[hi]
@@ -370,7 +426,7 @@ def write_f_fs(path, ion, cfgs, terms, levels, e1, ip):
             tl, th = terms[lo], terms[hi]
             lab = (f"{let[lo]}{tl['S']}{LNAME[tl['L']]}{'o' if tl['p'] < 0 else 'e'}->"
                    f"{let[hi]}{th['S']}{LNAME[th['L']]}{'o' if th['p'] < 0 else 'e'}")
-            gf = sum(t.gf for t in trs); S = sum(abs(t.S) for t in trs)
+            gf = sum(t.gf for t in trs); S = sum(_S(t, abs(byK[t.KP].E - byK[t.K].E)) for t in trs)
             gA = sum(t.A * (byK[max(t.K, t.KP)].twoJ + 1) for t in trs)
             dE = th["E"] - tl["E"]
             Ei = (ip - tl["E"]) if ip is not None else tl["E"]
@@ -380,7 +436,7 @@ def write_f_fs(path, ion, cfgs, terms, levels, e1, ip):
             for t in sorted(trs, key=lambda t: (byK[min(t.K, t.KP)].E, byK[max(t.K, t.KP)].E)):
                 l1, l2 = byK[min(t.K, t.KP)], byK[max(t.K, t.KP)]
                 f.write(f"{l1.E * RY_CM:13.3f}{l2.E * RY_CM:13.3f}  {l2.E - l1.E:9.3E}{l1.twoJ + 1:4d}{l2.twoJ + 1:4d}"
-                        f"  {t.gf / (l1.twoJ + 1):9.3E}  {abs(t.S):9.3E}  {t.A:9.3E}\n")
+                        f"  {t.gf / (l1.twoJ + 1):9.3E}  {_S(t, l2.E - l1.E):9.3E}  {t.A:9.3E}\n")
             f.write("\n")
 
 
@@ -415,7 +471,7 @@ def write_f_fs_index(path, ion, cfgs, levels, e1, ip):
         f.write(f"\n{'-'*40}\n\n Line : 2J+1, pi (0 even, 1 odd), 2J'+1, pi', Ni, Nj, NN\n"
                 " Lines: i, j, wl(A), Ei(Ry), Ej(Ry), f, S, A   (f < 0: level i is the lower one)\n\n")
         f.write(f"{ion.Z:5d}{ion.n_electrons:5d} : Z, Number of electrons\n\n")
-        f.write(f"{'i':>5s}{'j':>5s}{'wl(A)':>11s}{'Ei(Ry)':>13s}{'Ej(Ry)':>13s}{'fL':>12s}{'S':>12s}{'Aji(s-1)':>12s}\n\n")
+        f.write(f"{'i':>4s}{'j':>4s}{'wl(A)':>11s}{'Ei(Ry)':>12s}{'Ej(Ry)':>12s}{'fL':>11s}{'S':>11s}{'Aji(s-1)':>11s}\n\n")
         pairs = defaultdict(list)
         for tr in e1:
             a, b = byK.get(tr.K), byK.get(tr.KP)
@@ -424,15 +480,15 @@ def write_f_fs_index(path, ion, cfgs, levels, e1, ip):
             lo, hi = (a, b) if a.E <= b.E else (b, a)
             pairs[(idx[lo.K][0], idx[hi.K][0])].append((lo, hi, tr))
         for (ki, kj), rows in sorted(pairs.items()):
-            f.write(f"{ki[0] + 1:5d}{0 if ki[1] > 0 else 1:5d}{kj[0] + 1:6d}{0 if kj[1] > 0 else 1:5d}"
-                    f"{len(sym[ki]):6d}{len(sym[kj]):5d}{len(rows):6d} : gi Pi gf Pf Ni Nf NN\n")
+            f.write(f"{ki[0] + 1:4d}{0 if ki[1] > 0 else 1:4d}{kj[0] + 1:8d}{0 if kj[1] > 0 else 1:4d}"
+                    f"{len(sym[ki]):8d}{len(sym[kj]):5d}{len(rows):7d} : gi Pi gf Pf Ni Nf NN\n")
             for lo, hi, tr in sorted(rows, key=lambda r: (idx[r[0].K][1], idx[r[1].K][1])):
                 dE = hi.E - lo.E
                 wl = 1e8 / (dE * RY_CM) if dE > 0 else float("inf")
                 Ei = lo.E - ip if ip is not None else lo.E
                 Ej = hi.E - ip if ip is not None else hi.E
-                f.write(f"{idx[lo.K][1]:5d}{idx[hi.K][1]:5d}{wl:11.2f}{Ei:13.4E}{Ej:13.4E}"
-                        f"{-tr.gf / (lo.twoJ + 1):12.3E}{abs(tr.S):12.3E}{tr.A:12.3E}\n")
+                f.write(f"{idx[lo.K][1]:4d}{idx[hi.K][1]:4d}{wl:11.2f}{Ei:12.4E}{Ej:12.4E}"
+                        f"{-tr.gf / (lo.twoJ + 1):11.3E}{_S(tr, dE):11.3E}{tr.A:11.3E}\n")
             f.write("\n")
 
 
@@ -443,6 +499,11 @@ def export(spectrum: str, workdir: str, data_dir: str, out: str):
     text, cfgs, levels, e1 = load_run(iondir)
     n_relabel = relabel_from_nist(levels, ion, iondir, cfgs, data_dir)
     ip = nist_ionization_limit(data_dir, ion.spectroscopic)
+    n_all = len(levels)
+    if ip is not None:                      # NORAD lists bound levels only
+        levels = [lv for lv in levels if lv.E < ip]
+        keep = {lv.K for lv in levels}
+        e1 = [t for t in e1 if t.K in keep and t.KP in keep]
     note = (f" Energies relative to the NIST ionization limit {ip:.5f} Ry (bound states negative)."
             if ip is not None else " No NIST ionization limit cached: energies are relative to the ground level.")
     terms = build_terms(levels)
@@ -453,7 +514,7 @@ def export(spectrum: str, workdir: str, data_dir: str, out: str):
     write_f_ls(base + ".f.ls.txt", ion, cfgs, terms, levels, e1, ip)
     write_f_fs_index(base + ".f.fs.txt", ion, cfgs, levels, e1, ip)      # Li-/He-like NORAD layout
     write_f_fs(base + ".f.fsm.txt", ion, cfgs, terms, levels, e1, ip)     # multiplet-header layout (Si I style)
-    print(f"{ion.spectroscopic}: {len(levels)} levels, {len(terms)} terms, {len(e1)} E1 lines, "
+    print(f"{ion.spectroscopic}: {len(levels)} bound levels ({n_all - len(levels)} above the limit left out), {len(terms)} terms, {len(e1)} E1 lines, "
           f"{n_relabel} level labels taken from NIST, "
           f"IP={'%.4f Ry' % ip if ip is not None else 'n/a'} -> {base}.{{en.ls,en.fs,f.ls,f.fs,f.fsm}}.txt")
 

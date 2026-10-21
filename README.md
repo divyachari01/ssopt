@@ -183,6 +183,9 @@ The results for one ion are in `work/<ion>/` (for Ni XV, `work/ni15/`):
 
 The level and transition tables in the NORAD formats are in the folder
 `norad_ss/` (for Ni XV, `norad_ss/ni15.*.txt`).
+As in NORAD, only bound levels are listed. SUPERSTRUCTURE does not give the
+parent (core) level, so the core term is filled in only where it is unique and
+the core J is left blank.
 
 ### Useful options
 
