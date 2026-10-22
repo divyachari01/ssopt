@@ -102,6 +102,14 @@ The original file, exactly as SUPERSTRUCTURE wrote it, is kept as
 and E1 rows refer to levels by index, so they stay consistent. `python swaps.py
 work` lists every relabelled level.
 
+`levels_orbital.txt` and `avalues.txt` are written from the full run with the
+same labels, and they pair each NIST level with the computed level of the same
+configuration, J and term when one lies within 10% of the NIST energy. Only the
+levels left over are paired by nearest energy. Pairing by energy alone can pick
+the wrong level when NIST lists only one of a mixed group: in Ni XV, NIST gives
+only 3s²3p4f ¹G₄ among the J = 4 levels of that configuration, and the nearest
+computed level is ³F₄, whose decays are those of a triplet.
+
 ## Lifetimes against experiment
 
 Laboratories measure the lifetime τ = 1/ΣA of a level, so the experimental test

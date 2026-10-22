@@ -186,7 +186,9 @@ def relabel_from_nist(levels, ion, iondir, cf_configs, data_dir, match_key="j", 
     except FileNotFoundError:
         return 0
     targets = M.nist_targets(nl, ion, configs)
-    matches = M.match_levels(levels, nl, ion, configs, cf_configs, targets=targets, match_key=match_key)
+    # pair by J and energy only: a term disagreement is exactly what this looks for
+    matches = M.match_levels(levels, nl, ion, configs, cf_configs, targets=targets, match_key=match_key,
+                             term_first=False)
     if not matches:
         return 0
     floor = 0.01 * max(nl[k].E for k in targets)

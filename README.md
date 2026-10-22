@@ -155,6 +155,11 @@ To try both and compare, give the second run its own folder by putting
 `WORKDIR=work_closed sbatch slurm/ion.slurm "Ni XV" 4 --core-bounds 0.8,1.6 --closed-core`.
 Its results are then in `work_closed/ni15/`.
 
+For a larger deck, add `--doubles paired` to both commands. It also includes the
+double excitations into the n = 4 shell (4s² to 4f²). On 87 test ions this
+lowered the median energy error only from 1.07% to 1.02%, while the runs took 4
+to 50 times longer.
+
 ### Optional: run many ions at once
 
 List the ions in a text file, one per line, and run:
@@ -175,11 +180,11 @@ The results for one ion are in `work/<ion>/` (for Ni XV, `work/ni15/`):
 
 | File | What it is |
 |---|---|
-| `levels_orbital.txt` | every computed level next to its NIST value, and the relative RMS error |
+| `levels_orbital.txt` | every computed level next to its NIST value (paired by configuration, J and term), and the relative RMS error |
 | `ssin.tuned_orbital` | the SUPERSTRUCTURE input with the tuned λ; `./structx < ssin.tuned_orbital > ssout` runs it again |
 | `ssout.full` | the full SUPERSTRUCTURE output at the tuned λ, with level labels matched to NIST where SUPERSTRUCTURE's names are clearly swapped |
 | `ssout.full.ss` | the same output exactly as SUPERSTRUCTURE wrote it, with its original labels |
-| `report.txt`, `avalues.txt` | the A-values compared with NIST (and NORAD where available) |
+| `report.txt`, `avalues.txt` | every E1 line between the paired levels, with its A-value next to NIST's (every line NIST lists, however weak) and NORAD's where available. Use this file for A-value tables rather than pairing levels by hand |
 
 The level and transition tables in the NORAD formats are in the folder
 `norad_ss/` (for Ni XV, `norad_ss/ni15.*.txt`).
@@ -220,9 +225,13 @@ reproduce. `ssopt` does this search automatically.
    interaction. Double excitations into higher shells (4s² to 4f²) are left out
    because they barely mix with the low levels but make the deck several times
    larger.
-2. **Matching.** Each computed level is paired with a NIST level of the same
-   configuration, parity and J, by nearest energy. Only these pairs judge the
-   fit, but every level is still computed and kept.
+2. **Matching.** During the tuning, each computed level is paired with a NIST
+   level of the same configuration, parity and J by nearest energy, because
+   SUPERSTRUCTURE's term names can change from one λ to the next. Only these
+   pairs judge the fit, but every level is still computed and kept. The final
+   tables (`levels_orbital.txt`, `avalues.txt`) pair by configuration, J and
+   term first, after the labels have been checked against NIST (step 6), and
+   use the nearest energy only for the levels left over.
 3. **Tuning.** The code looks for the λ with the smallest relative RMS error.
    It first tunes one λ per orbital angular momentum (s, p, d, f) and then one
    λ per orbital. Rather than trying λ at random, it fits a model of how every

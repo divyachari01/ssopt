@@ -122,13 +122,22 @@ def match_levels(computed: list[Level], nist: list[NistLevel], ion: Ion,
                  configs: list[dict], cf_configs: dict[int, dict], *,
                  targets: list[int] | None = None, e_max: float | None = None,
                  window: float | None = None, qn_fallback_window: float | None = None,
-                 strict_config: bool = False, match_key: str = "j") -> list[Match]:
+                 strict_config: bool = False, match_key: str = "j",
+                 term_first: bool = True, max_offset: float = 0.10) -> list[Match]:
     """match_key='ls': buckets are (parity, 2S+1, L, 2J) — for LS-coupled light ions.
     match_key='j' : buckets are (parity, 2J) only — for highly charged ions where
     intermediate coupling makes LS labels arbitrary (e.g. Ni XVI 3s3p² ²S½/²P½
     come out of SUPERSTRUCTURE with the labels the other way round from NIST).
     Configurations are still respected exactly as in 'ls' mode; a pair whose
-    LS term differs is reported as how='term'."""
+    LS term differs is reported as how='term'.
+
+    term_first (j mode): inside each (parity, 2J) bucket, NIST levels are first
+    paired with computed levels of the same configuration AND the same LS term,
+    as long as the pair is within `max_offset` (10%) of the NIST energy; only the
+    levels left over are paired by energy alone. Without it, a NIST level that is
+    the only one listed from a mixed group (Ni XV 3s2 3p 4f 1G4 among the J=4
+    levels 3G4, 3F4, 1G4) goes to whichever computed level is nearest in energy,
+    even when that level has another term and different decays."""
     if targets is None:
         targets = nist_targets(nist, ion, configs, e_max=e_max)
     comp_vkey = {j: valence_key(cf_configs[lv.CF], ion.core) for j, lv in enumerate(computed)}
@@ -148,6 +157,7 @@ def match_levels(computed: list[Level], nist: list[NistLevel], ion: Ion,
     def ckey(lv):
         return (lv.parity, lv.twoJ) if match_key == "j" else lv.key
 
+    floor = 0.01 * max((nist[i].E for i in targets), default=1.0)
     nb: dict[tuple, list[int]] = defaultdict(list)
     for i in targets:
         d = nist[i]
@@ -162,6 +172,14 @@ def match_levels(computed: list[Level], nist: list[NistLevel], ion: Ion,
         cjs = [j for j in cb.get(key, []) if comp_vkey[j] in allowed]
         if not cjs:
             continue
+        if match_key == "j" and term_first:
+            tp = [(abs(computed[j].E - nist[i].E), i, j) for i in nis for j in cjs
+                  if nist[i].twoSp1 is not None and nist[i].L is not None and "?" not in nist[i].term
+                  and comp_vkey[j] == valence_key(nist[i].cfg, ion.core)
+                  and (computed[j].twoSp1, computed[j].L) == (nist[i].twoSp1, nist[i].L)
+                  and abs(computed[j].E - nist[i].E) <= max_offset * max(nist[i].E, floor)]
+            for i, j in _greedy(tp, used_n, used_c, window):
+                out.append(Match(i, j, key, nist[i].E, computed[j].E, "cfg"))
         if strict_config:
             pairs = [(abs(computed[j].E - nist[i].E), i, j) for i in nis for j in cjs
                      if comp_vkey[j] == valence_key(nist[i].cfg, ion.core)]

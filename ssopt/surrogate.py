@@ -304,8 +304,9 @@ class Evaluator:
             if not r.ok:
                 out.append(Sample(list(lam), {}, np.inf, 0, r.elapsed, False, tag))
                 continue
+            # tuning pairs by J and energy (a smooth objective); the reports pair by term first
             m = M.match_levels(r.levels, self.nist, self.ion, self.configs, r.configs,
-                               targets=self.targets, match_key=self.match_key)
+                               targets=self.targets, match_key=self.match_key, term_first=False)
             E = {mm.nist_idx: mm.E_comp for mm in m}
             out.append(Sample(list(lam), E, M.rms(m, self.weights), len(m), r.elapsed, True, tag))
         self.log(f"  batch of {len(lams)} done in {time.time() - t0:.0f}s: "

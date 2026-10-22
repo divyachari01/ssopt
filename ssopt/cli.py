@@ -186,9 +186,13 @@ def cmd_full(args):
                     stop_after_levels=False, timeout=args.timeout * 10, keep_fort7=True)
     log(f"  done in {r.elapsed:.0f}s, {len(r.levels)} levels")
     shutil.copy(r.ssout, os.path.join(iondir, "ssout.full"))
+    from .export import relabel_from_nist
+    relabel_from_nist(r.levels, ion, iondir, r.configs, args.data, args.match_key)   # same labels as the relabelled ssout.full
     targets = M.nist_targets(nl, ion, plan.configs, e_max=args.e_max)
     m = M.match_levels(r.levels, nl, ion, plan.configs, r.configs, targets=targets, match_key=args.match_key)
     rep = M.summary(m, nl, r.levels, r.configs)
+    with open(os.path.join(iondir, f"levels_{mode}.txt"), "w") as f:   # same pairing and labels as avalues.txt
+        f.write(rep + "\n")
     arep = compare(iondir, ion, r, m, nl, args.data)
     with open(os.path.join(iondir, "report.txt"), "w") as f:
         f.write(rep + "\n\n" + arep + "\n")
@@ -226,7 +230,8 @@ def cmd_prune(args):
         if not r.ok:
             lines.append(f"{g:<14}{len(cfgs):>8}{'FAIL':>8}")
             continue
-        m = M.match_levels(r.levels, nl, ion, cfgs, r.configs, targets=targets, match_key=args.match_key)
+        m = M.match_levels(r.levels, nl, ion, cfgs, r.configs, targets=targets, match_key=args.match_key,
+                           term_first=False)
         rr = M.rms(m)
         if base is None:
             base = rr

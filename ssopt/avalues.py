@@ -8,8 +8,8 @@ NIST-identified we look up:
   * NIST A_ki  — from the ASD lines cache, matched on the two level energies
   * NORAD A    — from Nahar's f.fs file, matched on quantum numbers + energies
 
-and report ratios. Weak lines (gf below `gf_min`) are skipped — their A values
-are dominated by cancellation and say nothing about λ.
+and report ratios. Weak lines (gf below `gf_min`) are skipped unless NIST lists
+them, since their A values are dominated by cancellation.
 """
 from __future__ import annotations
 
@@ -104,12 +104,12 @@ def compare(iondir: str, ion: Ion, run, matches, nist_levels, data_dir: str,
     for r in e1:
         if r.K not in K2nist or r.KP not in K2nist:
             continue
-        if r.gf < gf_min:
-            continue
         up, lo = K2nist[r.K], K2nist[r.KP]
         if nist_levels[up].E < nist_levels[lo].E:
             up, lo = lo, up
         a_nist = line_idx.get((lo, up))
+        if r.gf < gf_min and a_nist is None:      # weak lines are listed only when NIST has them
+            continue
         a_norad = norad_idx.get((lo, up))
         rows.append((lo, up, r, a_nist.A if a_nist else float("nan"),
                      a_nist.acc if a_nist else "", a_norad.A if a_norad else float("nan")))
@@ -124,7 +124,8 @@ def compare(iondir: str, ion: Ion, run, matches, nist_levels, data_dir: str,
                 f"within x2: {np.mean(lr < math.log10(2)) * 100:.0f}%  "
                 f"median |log10 ratio|={np.median(lr):.3f}")
 
-    out = [f"A-value check ({len(rows)} E1 transitions between NIST-identified levels, gf >= {gf_min})"]
+    out = [f"A-value check ({len(rows)} E1 transitions between NIST-identified levels: gf >= {gf_min}, "
+           f"plus every weaker line that NIST lists)"]
     out.append("  vs NIST : " + stats([r.A / a for _, _, r, a, _, _ in rows if math.isfinite(a) and a > 0]))
     out.append("  vs NORAD: " + stats([r.A / a for _, _, r, _, _, a in rows if math.isfinite(a) and a > 0]))
     if not nist_lines:
