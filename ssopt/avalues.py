@@ -82,7 +82,7 @@ def _norad_level_index(trans: list[R.NoradTransition], levels: list[N.NistLevel]
 
 
 def compare(iondir: str, ion: Ion, run, matches, nist_levels, data_dir: str,
-            gf_min: float = 1e-3, max_rows: int = 400) -> str:
+            gf_min: float = 1e-3, max_rows: int = 400, flagged=frozenset()) -> str:
     text = read_ssout(run.ssout)
     e1 = parse_e1(text)
     if not e1:
@@ -126,7 +126,12 @@ def compare(iondir: str, ion: Ion, run, matches, nist_levels, data_dir: str,
 
     out = [f"A-value check ({len(rows)} E1 transitions between NIST-identified levels: gf >= {gf_min}, "
            f"plus every weaker line that NIST lists)"]
-    out.append("  vs NIST : " + stats([r.A / a for _, _, r, a, _, _ in rows if math.isfinite(a) and a > 0]))
+    sure = [t for t in rows if t[0] not in flagged and t[1] not in flagged]
+    out.append("  vs NIST : " + stats([r.A / a for _, _, r, a, _, _ in sure if math.isfinite(a) and a > 0]))
+    nq = sum(1 for t in rows if (t[0] in flagged or t[1] in flagged) and math.isfinite(t[3]))
+    if nq:
+        out.append(f"  ({nq} NIST line(s) involve a level listed as an uncertain identification at the end of "
+                   f"levels_orbital.txt and are left out of these numbers)")
     out.append("  vs NORAD: " + stats([r.A / a for _, _, r, _, _, a in rows if math.isfinite(a) and a > 0]))
     if not nist_lines:
         out.append("  (no NIST lines cache — run `ssopt fetch` on a login node)")

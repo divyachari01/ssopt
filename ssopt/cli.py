@@ -190,10 +190,11 @@ def cmd_full(args):
     relabel_from_nist(r.levels, ion, iondir, r.configs, args.data, args.match_key)   # same labels as the relabelled ssout.full
     targets = M.nist_targets(nl, ion, plan.configs, e_max=args.e_max)
     m = M.match_levels(r.levels, nl, ion, plan.configs, r.configs, targets=targets, match_key=args.match_key)
-    rep = M.summary(m, nl, r.levels, r.configs)
+    flagged = M.ambiguous(m, r.levels, nl, ion, plan.configs, r.configs, targets, args.match_key)
+    rep = M.summary(m, nl, r.levels, r.configs, flagged)
     with open(os.path.join(iondir, f"levels_{mode}.txt"), "w") as f:   # same pairing and labels as avalues.txt
         f.write(rep + "\n")
-    arep = compare(iondir, ion, r, m, nl, args.data)
+    arep = compare(iondir, ion, r, m, nl, args.data, flagged=flagged)
     with open(os.path.join(iondir, "report.txt"), "w") as f:
         f.write(rep + "\n\n" + arep + "\n")
     print(rep)

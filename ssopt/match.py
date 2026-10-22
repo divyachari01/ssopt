@@ -266,8 +266,18 @@ def rms(matches: list[Match], weights: dict[int, float] | None = None) -> float:
     return float(np.sqrt(np.mean(d * d)))
 
 
+def ambiguous(matches: list[Match], computed, nist, ion, configs, cf_configs, targets, match_key="j") -> set[int]:
+    """NIST levels whose computed partner changes when the pairing ignores the LS term:
+    for these strongly mixed levels neither the term nor the energy settles which
+    computed level is the NIST one, so their lines are marked '?' in the tables."""
+    by_energy = {m.nist_idx: m.comp_idx for m in match_levels(computed, nist, ion, configs, cf_configs,
+                                                             targets=targets, match_key=match_key,
+                                                             term_first=False)}
+    return {m.nist_idx for m in matches if by_energy.get(m.nist_idx) != m.comp_idx}
+
+
 def summary(matches: list[Match], nist: list[NistLevel], computed: list[Level] | None = None,
-            cf_configs: dict | None = None) -> str:
+            cf_configs: dict | None = None, flagged=frozenset()) -> str:
     from .ions import config_str
     lines = [f"{'NIST config':<26}{'term':<12}{'J':>4}{'E_nist':>10}{'E_comp':>10}{'diff':>9}  {'how':<4}{'SS config (CF)'}"]
     for m in matches:
@@ -286,4 +296,9 @@ def summary(matches: list[Match], nist: list[NistLevel], computed: list[Level] |
                  f"RMS about mean = {np.sqrt(np.mean((d - d.mean()) ** 2)) if len(d) else float('nan'):.5f}   "
                  f"RMS without worst level = {np.sqrt(np.mean(excl ** 2)) if len(excl) else float('nan'):.5f}   "
                  f"relative RMS = {100 * rel:.2f} %")
+    if flagged:
+        names = ", ".join(f"{nist[i].config} {nist[i].term} {nist[i].J:g}"
+                          for i in sorted(flagged, key=lambda i: nist[i].E))
+        lines.append(f"uncertain identifications ({len(flagged)} strongly mixed levels, where pairing by term and "
+                     f"by energy give different computed levels): {names}")
     return "\n".join(lines)

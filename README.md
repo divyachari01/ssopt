@@ -180,11 +180,11 @@ The results for one ion are in `work/<ion>/` (for Ni XV, `work/ni15/`):
 
 | File | What it is |
 |---|---|
-| `levels_orbital.txt` | every computed level next to its NIST value (paired by configuration, J and term), and the relative RMS error |
+| `levels_orbital.txt` | every computed level next to its NIST value (paired by configuration, J and term), and the relative RMS error. The last line lists the uncertain identifications: strongly mixed levels for which pairing by term and by energy give different computed levels |
 | `ssin.tuned_orbital` | the SUPERSTRUCTURE input with the tuned λ; `./structx < ssin.tuned_orbital > ssout` runs it again |
 | `ssout.full` | the full SUPERSTRUCTURE output at the tuned λ, with level labels matched to NIST where SUPERSTRUCTURE's names are clearly swapped |
 | `ssout.full.ss` | the same output exactly as SUPERSTRUCTURE wrote it, with its original labels |
-| `report.txt`, `avalues.txt` | every E1 line between the paired levels, with its A-value next to NIST's (every line NIST lists, however weak) and NORAD's where available. Use this file for A-value tables rather than pairing levels by hand |
+| `report.txt`, `avalues.txt` | every E1 line between the paired levels, with its A-value next to NIST's (every line NIST lists, however weak) and NORAD's where available. Use this file for A-value tables rather than pairing levels by hand. The summary numbers at the top leave out lines to uncertain levels |
 
 The level and transition tables in the NORAD formats are in the folder
 `norad_ss/` (for Ni XV, `norad_ss/ni15.*.txt`).
