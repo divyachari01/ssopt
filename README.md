@@ -194,6 +194,12 @@ the `_orbital` files and everything made from them:
 | `ssout.full.ss` | the same output exactly as SUPERSTRUCTURE wrote it, with its original labels |
 | `report.txt`, `avalues.txt` | every E1 line between the paired levels, with its A-value next to NIST's (every line NIST lists, however weak) and NORAD's where available. Use this file for A-value tables rather than pairing levels by hand. The summary numbers at the top leave out lines to uncertain levels |
 
+Each run writes one line to `log.txt` that records the ssopt version, checksums
+of `structx` and of the NIST file, and the exact command, and the same line heads
+`levels_orbital.txt`, `avalues.txt` and `report.txt` together with the λ used.
+Two runs that disagree can be compared from these lines alone (the same version,
+`structx`, NIST file and options always give the same λ).
+
 The level and transition tables in the NORAD formats are in the folder
 `norad_ss/` (for Ni XV, `norad_ss/ni15.*.txt`).
 As in NORAD, only bound levels are listed. SUPERSTRUCTURE does not give the

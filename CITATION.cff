@@ -3,7 +3,7 @@ cff-version: 1.2.0
 message: "If you use ssopt in your work, please cite it as below. A journal paper describing the method is in preparation; this entry will be updated when it appears."
 title: "ssopt: automated tuning of Thomas-Fermi scaling parameters for SUPERSTRUCTURE"
 type: software
-version: 0.7.9
+version: 0.8.0
 date-released: 2026-10-18
 authors:
   - family-names: Chari

@@ -40,12 +40,45 @@ def _log_to(path):
     return log
 
 
+def _md5(path):
+    import hashlib
+    try:
+        with open(path, "rb") as f:
+            return hashlib.md5(f.read()).hexdigest()[:8]
+    except OSError:
+        return "missing"
+
+
+def _provenance(args, ion):
+    """One line that says exactly what produced a result: code version, structx, NIST file, command."""
+    import platform
+    import shlex
+    import subprocess
+    from . import __version__
+    repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    try:
+        git = lambda *a: subprocess.run(["git", "-C", repo, *a], capture_output=True, text=True,
+                                        timeout=10).stdout.strip()
+        commit = git("rev-parse", "--short", "HEAD")
+        if commit and git("status", "--porcelain", "--untracked-files=no"):
+            commit += "+local changes"
+    except (OSError, subprocess.SubprocessError):
+        commit = ""
+    npath = nist.levels_cache_path(args.data, ion.spectroscopic)
+    fetched = time.strftime("%Y-%m-%d", time.localtime(os.path.getmtime(npath))) if os.path.exists(npath) else "?"
+    return (f"ssopt {__version__}{f' (git {commit})' if commit else ''}, structx md5 {_md5(args.binary)}, "
+            f"NIST levels md5 {_md5(npath)} (fetched {fetched}), python {platform.python_version()}, "
+            f"numpy {np.__version__}; command: {shlex.join(['ssopt'] + sys.argv[1:])}")
+
+
 def _setup(args):
     ion = build_ion(args.ion)
     iondir = os.path.join(args.workdir, ion.tag)
     os.makedirs(iondir, exist_ok=True)
     log = _log_to(os.path.join(iondir, "log.txt"))
     nl = nist.load_levels(args.data, ion.spectroscopic, fetch_if_missing=not args.offline)
+    args.provenance = _provenance(args, ion)
+    log("run: " + args.provenance)
     plan = build_deck(ion, nl, n_max=args.n_max, l_max=args.l_max, max_exc=args.max_exc,
                       doubles_mode=args.doubles, e_max=args.e_max)
     if args.drop:
@@ -141,7 +174,7 @@ def cmd_tune(args):
     m = M.match_levels(r.levels, nl, ion, plan.configs, r.configs, targets=targets, match_key=args.match_key)
     rep = M.summary(m, nl, r.levels, r.configs)
     with open(os.path.join(iondir, f"levels_{mode}.txt"), "w") as f:
-        f.write(rep + "\n")
+        f.write(f"# {args.provenance}\n{rep}\n")
     print(rep)
     if not args.keep_runs:
         shutil.rmtree(workroot, ignore_errors=True)
@@ -192,11 +225,12 @@ def cmd_full(args):
     m = M.match_levels(r.levels, nl, ion, plan.configs, r.configs, targets=targets, match_key=args.match_key)
     flagged = M.ambiguous(m, r.levels, nl, ion, plan.configs, r.configs, targets, args.match_key)
     rep = M.summary(m, nl, r.levels, r.configs, flagged)
+    head = f"# {args.provenance}\n# λ ({mode}) = {','.join(f'{x:.4f}' for x in lam)}\n"
     with open(os.path.join(iondir, f"levels_{mode}.txt"), "w") as f:   # same pairing and labels as avalues.txt
-        f.write(rep + "\n")
-    arep = compare(iondir, ion, r, m, nl, args.data, flagged=flagged)
+        f.write(head + rep + "\n")
+    arep = compare(iondir, ion, r, m, nl, args.data, flagged=flagged, header=head)
     with open(os.path.join(iondir, "report.txt"), "w") as f:
-        f.write(rep + "\n\n" + arep + "\n")
+        f.write(head + rep + "\n\n" + arep + "\n")
     print(rep)
     print()
     print(arep)

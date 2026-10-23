@@ -82,7 +82,7 @@ def _norad_level_index(trans: list[R.NoradTransition], levels: list[N.NistLevel]
 
 
 def compare(iondir: str, ion: Ion, run, matches, nist_levels, data_dir: str,
-            gf_min: float = 1e-3, max_rows: int = 400, flagged=frozenset()) -> str:
+            gf_min: float = 1e-3, max_rows: int = 400, flagged=frozenset(), header: str = "") -> str:
     text = read_ssout(run.ssout)
     e1 = parse_e1(text)
     if not e1:
@@ -156,5 +156,5 @@ def compare(iondir: str, ion: Ion, run, matches, nist_levels, data_dir: str,
                    f"{fr(r.A / ar if math.isfinite(ar) and ar > 0 else float('nan')):>10}")
     rep = "\n".join(out)
     with open(os.path.join(iondir, "avalues.txt"), "w") as f:
-        f.write(rep + "\n")
+        f.write(header + rep + "\n")
     return rep

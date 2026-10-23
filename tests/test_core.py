@@ -2,7 +2,9 @@
 import os
 import sys
 
-import numpy as np
+for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
+    os.environ.setdefault(_v, "1")   # tiny matrices: many BLAS threads only fight each other on a busy login node
+import numpy as np  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -15,7 +17,7 @@ from ssopt.ions import build_ion, config_key, parse_config_str, parse_spectrum  
 from ssopt.surrogate import EnergySurrogate, History, Sample  # noqa: E402
 
 REF_SSIN = os.path.join(ROOT, "ref", "ssin.cardinal")
-NIST_SI = os.path.join(ROOT, "data", "nist_Si_I_levels_ry.csv")
+NIST_SI = os.path.join(HERE, "fixtures", "nist_Si_I_levels_ry.csv")   # NIST Si I levels with n <= 4, l <= 3
 REF_SSOUT = os.path.join(ROOT, "ref", "ssout.si1.levels")   # trimmed reference output
 
 
@@ -64,7 +66,7 @@ def test_ion_and_generator():
 
 def test_nist_parse():
     lv = nist.parse_levels(open(NIST_SI).read())
-    assert len(lv) > 500
+    assert len(lv) > 400
     assert lv[0].E == 0.0 and lv[0].term == "3P"
     assert abs(lv[3].E - 0.05739934) < 1e-8      # 1D2
     assert lv[5].parity == -1 and lv[5].twoSp1 == 5  # 5S*
@@ -73,7 +75,7 @@ def test_nist_parse():
 def test_nist_driven_deck_matches_reference():
     ion = build_ion("Si I")
     lv = nist.parse_levels(open(NIST_SI).read())
-    plan = build_deck(ion, lv, n_max=4, l_max=3)
+    plan = build_deck(ion, lv, n_max=4, l_max=3, doubles_mode="paired")   # the reference deck has the 4l^2 doubles
     ref = read_ssin(open(REF_SSIN).read())["configs"]
     assert {config_key(c) for c in plan.configs} == {config_key(c) for c in ref}
     assert plan.tags.count("spec") == 10
@@ -92,7 +94,7 @@ def test_ssout_parse_and_match():
     ion = build_ion("Si I")
     nl = nist.parse_levels(open(NIST_SI).read())
     cfgs = read_ssin(open(REF_SSIN).read())["configs"]
-    m = M.match_levels(lv, nl, ion, cfgs, cf)
+    m = M.match_levels(lv, nl, ion, cfgs, cf, term_first=False)    # the pairing used in tuning
     assert 60 <= len(m) <= 69
     # a swapped pair is only ever within the configurations NIST names in that bucket
     keys = {M.valence_key(c, ion.core) for c in cfgs}
@@ -100,10 +102,16 @@ def test_ssout_parse_and_match():
         assert M.valence_key(cf[lv[mm.comp_idx].CF], ion.core) in keys
         if mm.how == "cfg":
             assert M.valence_key(nl[mm.nist_idx].cfg, ion.core) == M.valence_key(cf[lv[mm.comp_idx].CF], ion.core)
-    strict = M.match_levels(lv, nl, ion, cfgs, cf, strict_config=True)
+    strict = M.match_levels(lv, nl, ion, cfgs, cf, strict_config=True, term_first=False)
     assert all(x.how != "swap" for x in strict)
     assert M.rms(m) <= M.rms(strict) + 1e-9
     assert 0.02 < M.rms(m) < 0.10
+    # the summary tables pair by configuration, J and term first: same NIST levels, terms kept where possible
+    tf = M.match_levels(lv, nl, ion, cfgs, cf)
+    assert sorted(x.nist_idx for x in tf) == sorted(x.nist_idx for x in m)
+    same = lambda mm: ((lv[mm.comp_idx].twoSp1, lv[mm.comp_idx].L) == (nl[mm.nist_idx].twoSp1, nl[mm.nist_idx].L)
+                       and M.valence_key(cf[lv[mm.comp_idx].CF], ion.core) == M.valence_key(nl[mm.nist_idx].cfg, ion.core))
+    assert sum(map(same, tf)) > sum(map(same, m))          # 45 vs 38 pairs agree in configuration and term
 
 
 def test_surrogate_recovers_quadratic_optimum():

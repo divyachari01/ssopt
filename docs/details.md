@@ -170,7 +170,7 @@ level energy).
 ssopt/       the Python package (deck writer, runner, matching, surrogate, export, ...)
 slurm/       ion.slurm (tuning), full.slurm (full run + tables), sweep.sh (a list of ions)
 docs/        this page
-tests/       python -m pytest tests/   (some tests need data/nist_Si_I_levels_ry.csv: run fetch "Si I" first)
+tests/       python -m pytest tests/   (no data or structx needed; NIST Si I levels are in tests/fixtures)
 ref/         a reference deck and reference output used by the tests
 benchmarks/  lifetimes_exp.csv, measured lifetimes
 swaps.py     lists relabelled levels with their NIST partners

@@ -1,7 +1,7 @@
 {
   "title": "ssopt: automated tuning of Thomas-Fermi scaling parameters for SUPERSTRUCTURE",
   "upload_type": "software",
-  "version": "0.7.9",
+  "version": "0.8.0",
   "description": "Surrogate-model optimiser that tunes the lambda_nl scaling parameters of the atomic structure code SUPERSTRUCTURE against NIST energy levels with no per-ion input. It makes level labels consistent with NIST where the energies decide it, checks A-values and level lifetimes against NIST, NORAD and measured values, and writes NORAD-format tables.",
   "creators": [
     {"name": "Chari, Divya", "affiliation": "Department of Physics, The Ohio State University"},
