@@ -3,10 +3,12 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23380595.svg)](https://doi.org/10.5281/zenodo.23380595)
 
 `ssopt` tunes the scaling parameters λ of the atomic structure code
-SUPERSTRUCTURE so that its energy levels agree as closely as possible with NIST.
-You give it the name of an ion, and it builds the configuration list, tunes λ,
-runs the full calculation with radiative data, and writes level and transition
-tables in the NORAD formats. Nothing is set by hand for each ion.
+SUPERSTRUCTURE against the observed energy levels in NIST, and then checks the
+results against data that is not used in the tuning: NIST A-values, measured
+lifetimes, NORAD and other calculations. You give it the name of an ion, and it
+builds the configuration list, tunes λ, runs the full calculation with radiative
+data, and writes level and transition tables in the NORAD formats. Nothing is
+set by hand for each ion.
 
 * [How to use it](#how-to-use-it)
 * [The science](#the-science)
@@ -178,6 +180,12 @@ for example `WORKDIR=run_closed bash slurm/sweep.sh my_ions.txt ...`.
 
 The results for one ion are in `work/<ion>/` (for Ni XV, `work/ni15/`):
 
+The tuning runs in two steps. It first tunes one λ per orbital angular momentum
+(s, p, d, f), which quickly finds a good region, and then one λ per orbital,
+starting from that result. Files ending in `_l` (`ssin.tuned_l`, `levels_l.txt`)
+are from the first step and are kept only as a record. The final results are
+the `_orbital` files and everything made from them:
+
 | File | What it is |
 |---|---|
 | `levels_orbital.txt` | every computed level next to its NIST value (paired by configuration, J and term), and the relative RMS error. The last line lists the uncertain identifications: strongly mixed levels for which pairing by term and by energy give different computed levels |
@@ -249,6 +257,14 @@ reproduce. `ssopt` does this search automatically.
    changed to NIST's only when the energies and the E1 decays make it clear,
    and then the NORAD-format tables are written.
 
+**What is fitted and what is checked.** Only the λ are tuned, and only to the
+NIST level energies. The code does not shift the computed energies toward the
+observed ones (as term energy corrections or adjusted diagonal energies do), so
+every energy, A-value, lifetime and mixing coefficient comes straight from
+SUPERSTRUCTURE at the tuned λ. The A-values and lifetimes are then compared with
+NIST, NORAD, measured lifetimes and other calculations. None of these
+comparisons feed back into the tuning, so they are an independent check.
+
 ### How accurate and how fast
 
 On a test set of 86 ions (the N- to P-like sequences up to Z = 28), the median
@@ -289,6 +305,12 @@ functional, so the result is variational rather than a fit to observation.
 In SUPERSTRUCTURE itself, the λ have been adjusted by hand to fit observed
 levels since Nussbaumer and Storey (1978).
 
+For a single ion, large calculations are the benchmark. For the Si-like ions,
+Jönsson et al. (2016) and Zhang et al. (2021) use MCDHF and RCI calculations
+(GRASP), and Gupta and Msezane (2012) use CIV3 with the diagonal energies
+adjusted to the NIST values. `ssopt` makes no such adjustment, and these papers
+are used only to check its Ni XV energies, A-values and lifetimes.
+
 The surrogate in `ssopt` models every level energy and computes the error from
 the predicted energies. In machine learning this is known as target-vector
 Bayesian optimisation (Uhrenholt & Jensen 2019; Astudillo & Frazier 2019;
@@ -299,8 +321,9 @@ Gaigalas et al. (2017) treat it for GRASP.
 `ssopt` differs from the atomic work above in four ways. It tunes
 SUPERSTRUCTURE, and it builds the configuration list and the pairing with NIST
 levels from the NIST list itself, with no input per ion. It has also been run
-on 119 ions across whole isoelectronic sequences, and it tests the results
-against measured lifetimes.
+on 119 ions across whole isoelectronic sequences, and it checks the results
+against NIST A-values, measured lifetimes and independent calculations, none of
+which are used in the tuning.
 
 ## Citing
 
@@ -387,3 +410,18 @@ Related methods
   https://doi.org/10.3390/atoms5010006
 * N. R. Badnell, A Breit-Pauli distorted wave implementation for AUTOSTRUCTURE,
   Comput. Phys. Commun. 182, 1528 (2011)
+
+Comparison data (Ni XV)
+
+* G. P. Gupta, A. Z. Msezane, Fine-structure energy levels, radiative rates and
+  lifetimes in Si-like nickel, Phys. Scr. 86, 015303 (2012),
+  https://doi.org/10.1088/0031-8949/86/01/015303
+* P. Jönsson, L. Radžiūtė, G. Gaigalas, M. R. Godefroid, J. P. Marques,
+  T. Brage, C. Froese Fischer, I. P. Grant, Accurate multiconfiguration
+  calculations of energy levels, lifetimes, and transition rates for the silicon
+  isoelectronic sequence, Astron. Astrophys. 585, A26 (2016),
+  https://doi.org/10.1051/0004-6361/201527106
+* X. H. Zhang, G. Del Zanna, K. Wang et al., Benchmarking multiconfiguration
+  Dirac-Hartree-Fock calculations for astrophysics: Si-like ions from Cr XI to
+  Zn XVII, Astrophys. J. Suppl. Ser. 257, 56 (2021),
+  https://doi.org/10.3847/1538-4365/ac2a3f
