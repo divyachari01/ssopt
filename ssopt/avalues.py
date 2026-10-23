@@ -133,6 +133,11 @@ def compare(iondir: str, ion: Ion, run, matches, nist_levels, data_dir: str,
         out.append(f"  ({nq} NIST line(s) involve a level listed as an uncertain identification at the end of "
                    f"levels_orbital.txt and are left out of these numbers)")
     out.append("  vs NORAD: " + stats([r.A / a for _, _, r, _, _, a in rows if math.isfinite(a) and a > 0]))
+    lv = [abs(math.log10(r.gf / r.gf_vel)) for _, _, r, _, _, _ in rows if r.gf >= 0.01 and r.gf_vel > 0]
+    if lv:
+        out.append(f"  gauge   : {len(lv)} lines with gf >= 0.01, length and velocity forms within 30% for "
+                   f"{np.mean(np.array(lv) < math.log10(1.3)) * 100:.0f}%, more than a factor 2 apart for "
+                   f"{sum(x > math.log10(2) for x in lv)} (column L/V; those lines are the least reliable)")
     if not nist_lines:
         out.append("  (no NIST lines cache — run `ssopt fetch` on a login node)")
     if not ntrans:
@@ -140,9 +145,8 @@ def compare(iondir: str, ion: Ion, run, matches, nist_levels, data_dir: str,
     out.append("")
     out.append(f"{'lower':<20}{'upper':<20}{'λ(Å)':>9}{'gf_SS':>9}{'L/V':>6}{'A_SS':>11}{'A_NIST':>11}{'acc':>4}"
                f"{'A_NORAD':>11}{'SS/NIST':>9}{'SS/NORAD':>10}")
-    out.append("  (L/V = gf(length) / [4 gf(velocity)]. structx prints 'VEL.GF' in a convention that is 1/4 of the length "
-               "form for exact wavefunctions — Si I resonance lines that agree with NIST sit at 1.00. Far from 1 means a "
-               "poor wavefunction for that transition, not a λ problem)")
+    out.append("  (L/V = gf in the length form / gf in the velocity form. The two are equal for an exact wavefunction "
+               "(the H-like ions give 1.00), so a value far from 1 marks a line whose A-value is less reliable)")
     rows.sort(key=lambda t: -t[2].gf)
     for lo, up, r, an, acc, ar in rows[:max_rows]:
         dl = nist_levels[lo]; du = nist_levels[up]
@@ -150,7 +154,7 @@ def compare(iondir: str, ion: Ion, run, matches, nist_levels, data_dir: str,
         l2 = f"{du.config} {du.term} {du.J:g}"[:19]
         fa = lambda x: f"{x:11.3e}" if math.isfinite(x) else f"{'-':>11}"
         fr = lambda x: f"{x:9.2f}" if math.isfinite(x) else f"{'-':>9}"
-        lv_ratio = r.gf / (4.0 * r.gf_vel) if r.gf_vel > 0 else float("nan")
+        lv_ratio = r.gf / r.gf_vel if r.gf_vel > 0 else float("nan")
         out.append(f"{l1:<20}{l2:<20}{r.wavel:>9.1f}{r.gf:>9.4f}{lv_ratio:>6.2f}{r.A:>11.3e}{fa(an)}{acc:>4}{fa(ar)}"
                    f"{fr(r.A / an if math.isfinite(an) and an > 0 else float('nan'))}"
                    f"{fr(r.A / ar if math.isfinite(ar) and ar > 0 else float('nan')):>10}")

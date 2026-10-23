@@ -120,6 +120,17 @@ benchmarks/lifetimes_exp.csv` compares with 139 measured lifetimes for 22 ions
 (storage rings, EBITs, ion traps, beam-foil and laser experiments), each with
 the URL it was read from.
 
+## Length and velocity forms
+
+SUPERSTRUCTURE gives each E1 line in the length and in the velocity form. The
+two agree for an exact wavefunction, so their ratio (L/V in `avalues.txt`) says
+how far to trust a line without any comparison data. The gauge line at the top
+of `avalues.txt` counts the lines with gf >= 0.01 whose two forms agree within
+30% and those that differ by more than a factor of 2. Disagreement is common in
+neutral and near-neutral atoms and in strongly mixed levels, where an n <= 4
+deck cannot describe the wavefunction well. The tuning fits energies only, so a
+good energy fit does not by itself guarantee good A-values for such lines.
+
 ## What the tuned λ mean
 
 About half of all runs land within 25% of the best RMS, so the error is flat
@@ -160,9 +171,9 @@ level energy).
 * `MAXTR` in a given build may be too small for the `fort.7` punch of a large
   deck. The punch is then incomplete, but ssout is not; this matters only for
   R-matrix work downstream.
-* `'VEL.GF'` in the radiative table is not the velocity gf: the stored
-  velocity/length ratio sits near 0.25 in this build, so the gauge test uses
-  four times the stored value.
+* `'VEL.GF'` in the radiative table is the gf in the velocity form. For an
+  exact wavefunction it equals the length-form gf, and the H-like ions do give
+  a ratio of 1.00, so `avalues.txt` lists the plain ratio as L/V.
 
 ## Repository layout
 
