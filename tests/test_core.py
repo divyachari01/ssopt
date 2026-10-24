@@ -239,3 +239,13 @@ def test_holdout_check():
         h.samples.append(Sample([lam], {i: nl[i].E + off for i in range(10)}, off, 10, 1.0, True))
     a, b, one, n = U.holdout(h, nl, "abs")
     assert n == 10 and abs(a - 0.005) < 1e-12 and abs(b - 0.005) < 1e-12 and abs(one - 0.02) < 1e-12
+
+
+def test_ci_generator_respects_full_core_shells():
+    from ssopt.ions import cap
+    # an open 3d below a full 3p, and an open 4f below full 4s 4p 4d: no shell may overflow
+    for name, n_max in (("Fe I", 4), ("Yb II", 6)):
+        cfgs = generate_ci_configs(build_ion(name), n_max, 3, 2, "complex")
+        assert cfgs and all(occ <= cap(l) for c in cfgs for (n, l), occ in c.items())
+    yb = generate_ci_configs(build_ion("Yb II"), 6, 3, 2, "complex")
+    assert any(c.get((4, 3)) == 14 and c.get((6, 0)) == 1 for c in yb)     # 4f14 6s, the real ground

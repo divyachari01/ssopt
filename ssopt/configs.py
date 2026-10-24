@@ -33,24 +33,41 @@ def active_orbitals(ion: Ion, n_max: int, l_max: int) -> list[tuple[int, int]]:
     return [o for o in EISSNER_ORDER if o in orbs]
 
 
-def _distribute(orbs, n_left, idx, current, out):
-    if idx == len(orbs):
-        if n_left == 0:
-            out.append(dict(current))
-        return
-    n, l = orbs[idx]
-    for occ in range(0, min(cap(l), n_left) + 1):
-        current[(n, l)] = occ
-        _distribute(orbs, n_left - occ, idx + 1, current, out)
-        current.pop((n, l), None)
-
-
 def full_config(ion: Ion, valence: dict) -> dict:
     full = dict(ion.core)
     for o, occ in valence.items():
         if occ:
             full[o] = full.get(o, 0) + occ
     return full
+
+
+def _excitations(ref: dict, orbs: list, room: dict, max_exc: int) -> list[dict]:
+    """Every distribution reachable from ref by moving up to max_exc electrons between
+    the active orbitals (room = free places per orbital, core already subtracted).
+    Built directly from the reference, so the cost grows with the number of orbitals,
+    not with the number of ways to spread all valence electrons over them."""
+    start = {o: ref.get(o, 0) for o in orbs}
+    found = {tuple(start[o] for o in orbs): start}
+    frontier = [start]
+    for _ in range(max_exc):
+        nxt = []
+        for d in frontier:
+            for a in orbs:
+                if d[a] == 0:
+                    continue
+                for b in orbs:
+                    if b == a or d[b] >= room[b]:
+                        continue
+                    e = dict(d)
+                    e[a] -= 1
+                    e[b] += 1
+                    k = tuple(e[o] for o in orbs)
+                    if k not in found:
+                        found[k] = e
+                        nxt.append(e)
+        frontier = nxt
+    # same order as an exhaustive enumeration (occupations ascending, orbital by orbital)
+    return [{o: n for o, n in found[k].items() if n} for k in sorted(found)]
 
 
 def generate_ci_configs(ion: Ion, n_max: int = 4, l_max: int = 3, max_exc: int = 2,
@@ -60,14 +77,15 @@ def generate_ci_configs(ion: Ion, n_max: int = 4, l_max: int = 3, max_exc: int =
     doubles_mode='complex': as 'paired', but only into subshells of the ground
                             configuration's outermost shell (e.g. 3s2 3p2 -> 3p4,
                             3p2 3d2, 3s2 3d2), the near-degenerate correlation.
-                            Doubles into higher shells (4s2 ... 4f2) are left out."""
+                            Doubles into higher shells (4s2 ... 4f2) are left out.
+    Inner subshells that are full in the core (3p below an open 3d, 4s 4p 4d below
+    an open 4f) take no valence electrons."""
     orbs = active_orbitals(ion, n_max, l_max)
     ref = {o: ion.valence.get(o, 0) for o in orbs}
+    room = {o: cap(o[1]) - ion.core.get(o, 0) for o in orbs}
     n_outer = max(n for (n, l) in ion.valence)
-    raw: list[dict] = []
-    _distribute(orbs, ion.n_valence, 0, {}, raw)
     out, seen = [], set()
-    for dist in raw:
+    for dist in _excitations(ref, orbs, room, max_exc):
         exc = excitation_level(dist, ref)
         if exc > max_exc:
             continue
