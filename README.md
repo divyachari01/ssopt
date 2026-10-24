@@ -41,6 +41,9 @@ which also has her notes on running the code. Compile it with:
 gfortran -O2 -std=legacy -ffixed-line-length-72 struct.f -o structx
 ```
 
+This takes a few seconds. A warning that a named COMMON block "shall be of the
+same size as elsewhere" can be ignored.
+
 Then put `structx` **inside the `ssopt` folder**, next to this README. If it
 already sits somewhere else, a link works too:
 
@@ -64,15 +67,16 @@ If a very large calculation later stops with a message such as
 
 ### Step 3: check Python
 
-You need Python 3.10 or newer with numpy and scipy. Check with:
+You need Python 3.9 or newer with numpy and scipy. Check with:
 
 ```bash
 python -c "import numpy, scipy; print('ok')"
 ```
 
-If it does not print `ok`, load your cluster's Python module (often
-`module load python`) or install the two packages with
-`pip install --user numpy scipy`.
+If it does not print `ok`, load your cluster's Python module or install the two
+packages with `pip install --user numpy scipy`. Clusters usually want the full
+module name with its version, as listed by `module avail python` (on OSC
+Cardinal, `module load python/3.12`).
 
 ### Step 4: tell Slurm your project code (once)
 
