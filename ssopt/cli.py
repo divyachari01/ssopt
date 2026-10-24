@@ -5,6 +5,7 @@
   ssopt tune   "Si I" [--mode l|orbital] [--n-init 32] [--rounds 4] [--workers N]
   ssopt full   "Si I" --lambdas 0.97,1.02,...   # one full run with radiative data, A-value check
   ssopt prune  "Si I" --lambdas ...  # leave-group-out test of correlation configs
+  ssopt uncert "Si I" --mode orbital  # uncertainty and grade of every A-value and lifetime, held-out checks
 
 Everything lands under <workdir>/<ion tag>/ :
   deck.json, history.json, ssin.tuned, report.txt, runs/ (scratch, cleaned)
@@ -173,8 +174,11 @@ def cmd_tune(args):
                     os.path.abspath(args.binary), stop_after_levels=True, timeout=args.timeout, restart_file=rf)
     m = M.match_levels(r.levels, nl, ion, plan.configs, r.configs, targets=targets, match_key=args.match_key)
     rep = M.summary(m, nl, r.levels, r.configs)
+    from .uncert import holdout, holdout_line
+    ho = holdout_line(holdout(hist, nl, args.objective), args.objective)
+    log(ho)
     with open(os.path.join(iondir, f"levels_{mode}.txt"), "w") as f:
-        f.write(f"# {args.provenance}\n{rep}\n")
+        f.write(f"# {args.provenance}\n{rep}\n{ho}\n")
     print(rep)
     if not args.keep_runs:
         shutil.rmtree(workroot, ignore_errors=True)
@@ -226,6 +230,10 @@ def cmd_full(args):
     flagged = M.ambiguous(m, r.levels, nl, ion, plan.configs, r.configs, targets, args.match_key)
     rep = M.summary(m, nl, r.levels, r.configs, flagged)
     head = f"# {args.provenance}\n# λ ({mode}) = {','.join(f'{x:.4f}' for x in lam)}\n"
+    hp = os.path.join(iondir, f"history_{mode}.json")
+    if os.path.exists(hp):
+        from .uncert import holdout, holdout_line
+        rep += "\n" + holdout_line(holdout(History.load(hp), nl, args.objective), args.objective)
     with open(os.path.join(iondir, f"levels_{mode}.txt"), "w") as f:   # same pairing and labels as avalues.txt
         f.write(head + rep + "\n")
     arep = compare(iondir, ion, r, m, nl, args.data, flagged=flagged, header=head)
@@ -234,6 +242,25 @@ def cmd_full(args):
     print(rep)
     print()
     print(arep)
+
+
+def cmd_uncert(args):
+    """Uncertainty and grade of every E1 A-value and lifetime (see ssopt/uncert.py)."""
+    from . import uncert
+    ion, iondir, log, nl, plan = _setup(args)
+    hp = os.path.join(iondir, f"history_{args.mode}.json")
+    if not os.path.exists(hp):
+        raise SystemExit(f"no {hp}: run `tune --mode {args.mode}` first")
+    other = os.path.join(iondir, f"history_{'l' if args.mode == 'orbital' else 'orbital'}.json")
+    extra = [History.load(other)] if os.path.exists(other) else []
+    hist = History.load(hp)
+    head = (f"# {args.provenance}\n# λ ({args.mode}) = "
+            f"{','.join(f'{x:.4f}' for x in hist.best().lam)}\n")
+    rep = uncert.run(args, ion, iondir, log, nl, plan, hist, extra)
+    with open(os.path.join(iondir, "uncert.txt"), "w") as f:
+        f.write(head + rep + "\n")
+    print("\n".join(rep.splitlines()[:8]))
+    log(f"-> {iondir}/uncert.txt")
 
 
 def cmd_prune(args):
@@ -340,6 +367,11 @@ def main(argv=None):
                    help="radiative data between all levels, including those of the correlation configurations "
                         "(much slower; by default only levels whose leading configuration is a NIST one)")
     s.set_defaults(fn=cmd_full)
+    s = sub.add_parser("uncert"); common(s)
+    s.add_argument("--max-runs", type=int, default=16, help="at most this many λ sets in the ensemble")
+    s.add_argument("--e1-only", action="store_true", help="as for full (then no lifetimes)")
+    s.add_argument("--all-transitions", action="store_true", help="as for full")
+    s.set_defaults(fn=cmd_uncert)
     s = sub.add_parser("prune"); common(s)
     s.add_argument("--lambdas", required=True, help="comma-separated λ, or 'best'")
     s.set_defaults(fn=cmd_prune)

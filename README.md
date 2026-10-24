@@ -153,8 +153,15 @@ Ions are named as in NIST, for example `"Ni XV"` (Ni¹⁴⁺), `"Fe XVII"` or
    Here `orbital best j` means: use one λ per orbital, take the best λ found by
    the tuning, and pair the levels with NIST by J.
 
+4. Optionally, after the tuning job, compute the uncertainties (about 17 full
+   runs in one job). Add `--closed-core` if you used it in step 2.
+
+   ```bash
+   sbatch slurm/uncert.slurm "Ni XV"
+   ```
+
 The results are in `work/ni15/` (see below), and the job logs are
-`ssopt_ion_<job id>.log` and `ssopt_full_<job id>.log`.
+`ssopt_ion_<job id>.log`, `ssopt_full_<job id>.log` and `ssopt_uncert_<job id>.log`.
 
 To try both and compare, give the second run its own folder by putting
 `WORKDIR=work_closed` in front of both of its `sbatch` commands, for example
@@ -176,7 +183,7 @@ bash slurm/sweep.sh my_ions.txt --core-bounds 0.8,1.6 --closed-core   # inner sh
 ```
 
 This downloads the NIST data, submits the tuning jobs and starts each full run
-when its tuning is done. Ions that are already tuned are
+and uncertainty job when its tuning is done. Ions that are already tuned are
 skipped. To keep a set of runs in its own folder, put `WORKDIR=<name>` in front,
 for example `WORKDIR=run_closed bash slurm/sweep.sh my_ions.txt ...`.
 
@@ -197,6 +204,7 @@ the `_orbital` files and everything made from them:
 | `ssout.full` | the full SUPERSTRUCTURE output at the tuned λ, with level labels matched to NIST where SUPERSTRUCTURE's names are clearly swapped |
 | `ssout.full.ss` | the same output exactly as SUPERSTRUCTURE wrote it, with its original labels |
 | `report.txt`, `avalues.txt` | every E1 line between the paired levels, with its A-value next to NIST's (every line NIST lists, however weak) and NORAD's where available. Use this file for A-value tables rather than pairing levels by hand. The summary numbers at the top leave out lines to uncertain levels. The L/V column compares the length and velocity forms of each line: they agree for an exact wavefunction, so a value far from 1 marks a less reliable A-value |
+| `uncert.txt` | every E1 line and lifetime with its 1σ uncertainty and NIST letter grade, the two parts of the uncertainty, and A at the NIST transition energy for reference. The top lines give the held-out level check and the A-values at λ = 1 and tuned against NIST ([details](docs/details.md#uncertainties)) |
 
 Each run writes one line to `log.txt` that records the ssopt version, checksums
 of `structx` and of the NIST file, and the exact command, and the same line heads
@@ -219,6 +227,7 @@ the core J is left blank.
 | `--all-transitions` | full run: transitions between all levels, not only NIST-type levels (much slower) |
 | `--e1-only` | full run: skip the forbidden E2/M1 lines (about twice as fast) |
 | `--n-max 5` | allow orbitals up to n = 5 (default 4) |
+| `--max-runs 16` | uncertainties: at most this many λ sets in the ensemble |
 
 
 ---
@@ -274,6 +283,12 @@ every energy, A-value, lifetime and mixing coefficient comes straight from
 SUPERSTRUCTURE at the tuned λ. The A-values and lifetimes are then compared with
 NIST, NORAD, measured lifetimes and other calculations. None of these
 comparisons feed back into the tuning, so they are an independent check.
+`ssopt uncert` then gives every A-value and lifetime an uncertainty and a
+NIST-style grade, from the length/velocity agreement of each line and the spread
+over λ sets that fit the energies equally well, calibrated against independent
+calculations. It also reports the energy error on NIST levels left out when
+choosing λ and the A-values at λ = 1 next to the tuned ones
+([`docs/details.md`](docs/details.md#uncertainties)).
 
 ### How accurate and how fast
 

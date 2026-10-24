@@ -131,6 +131,68 @@ neutral and near-neutral atoms and in strongly mixed levels, where an n <= 4
 deck cannot describe the wavefunction well. The tuning fits energies only, so a
 good energy fit does not by itself guarantee good A-values for such lines.
 
+## Uncertainties
+
+`ssopt uncert "<ion>" --mode orbital` (or `sbatch slurm/uncert.slurm "<ion>"`) gives every E1 line and every
+lifetime a 1σ uncertainty and the NIST letter grade that goes with it (AAA ≤ 0.3%, AA ≤ 1%, A+ ≤ 2%, A ≤ 3%,
+B+ ≤ 7%, B ≤ 10%, C+ ≤ 18%, C ≤ 25%, D+ ≤ 40%, D ≤ 50%, E above). Two sources of error are estimated for each
+line and added in quadrature, working in ln A.
+
+**The flat valley.** Many λ sets reproduce the NIST energies about as well as the best one, and they need not
+give the same A-values. The λ sets tried during tuning whose energy RMS lies inside the 68% confidence region
+of the fit are run again with radiative data. Taking the level errors to be of the size of the best-fit
+scatter, this is the usual Δχ² region of a least-squares fit,
+
+    RMS ≤ RMS_best · sqrt(1 + χ²₆₈(d) / N),
+
+for d λ values and N fitted levels, which is 1.04 to 1.3 times the best RMS for our ions. The λ sets of the
+first stage (one λ per l) are points of the same orbital space and are included. At most 16 sets are used,
+spread evenly in RMS, and s_ens is the standard deviation of ln A over them. Levels are followed from one λ
+set to the next by parity, J and rank in energy, so where two levels cross their lines swap and the line gets
+a large spread.
+
+**The wavefunction.** The length and velocity forms of gf agree for an exact wavefunction, so
+s_LV = |ln(gf_L / gf_V)|. One line can agree by chance, so the mean of s_LV over the lines within a factor of
+10 in line strength is used as a floor, as in the MCDHF literature (Ekman et al. 2014, Kramida 2014).
+
+**Combining.** σ = sqrt((a s_ens)² + (b s_LV)² + F²). The constants (a, b, F) in `ssopt/uncert.py` were
+fitted once against independent MCDHF and CI+MBPT calculations (the VizieR tables of the benchmark set, about
+50 ions), separately for strong lines (gf ≥ 0.01) of ions with charge 2 or more, strong lines of neutral and
+singly charged ions, and weaker lines. They were chosen so that 68% of the actual differences ln(A/A_bench)
+fall within σ in each of nine cells (low, middle and high s_ens, times low, middle and high s_LV), so that σ
+is right where the two indicators say the error is small and where they say it is large. Each fit was then
+repeated on half of the ions and checked on the other half. On the held-out ions the share within 1σ stayed
+close to 68%. The tails are heavier than for a normal distribution, so somewhat fewer than 95% fall within 2σ.
+Lifetimes, which were not used in the fit, came out as well calibrated as the lines. The benchmark values
+have errors of a few percent themselves, which is small next to ours.
+
+Several things came out of the fit. The spread over the 68% region has to be scaled up by about 5: the
+region is too narrow, because the level errors are not independent but come from the same shortcomings of
+the model, so the energies pin λ down less than N independent levels would. Even so, the spread is the
+better of the two indicators of which lines are poor, and the length/velocity term adds a little on top of
+it. Weak lines (gf < 0.01) are uncertain by a factor of several, since their line strength comes from
+cancelling contributions, so they are listed for completeness and nearly all get grade E. The lines of one
+ion also share part of their error (in some ions most lines are off in the same direction), so the grades
+are right on average over many ions while a single ion can do better or worse than its grades say. Finally,
+neutral and singly charged ions were represented by only five ions, so their constants are the least certain.
+
+**Lifetimes.** s_ens is the spread of ln τ over the same λ sets. The length/velocity term of each E1 decay is
+weighted by its share of the total rate, sqrt(Σ (A_i s_LV,i)²) / ΣA_i, and the strong-line constants of the
+ion's charge group are used. Levels that decay only by E2 or M1 lines have no length/velocity check, so only
+the spread and F enter, and they are marked `forbidden`.
+
+## Checks on data not used in the tuning
+
+`uncert.txt` (and `levels_<mode>.txt` after tuning) also report:
+
+* **Held-out levels.** The λ sets tried during tuning are re-ranked using 4/5 of the NIST levels, and the
+  best of them is scored on the other 1/5, for each of 5 folds. No new runs are needed. If the RMS on the
+  left-out levels is close to that on the levels used, the tuning is not fitting noise. The RMS at λ = 1 is
+  given for comparison. The search itself was guided by all levels, so this is a slightly optimistic check.
+* **A-values before and after tuning.** The strong E1 lines at λ = 1 and at the tuned λ, both against NIST.
+* **A_obs.** The A-value with the computed transition energy replaced by the NIST one (A ∝ ΔE³ for E1),
+  listed for reference. The tuned A, computed entirely by SUPERSTRUCTURE, stays the result.
+
 ## What the tuned λ mean
 
 About half of all runs land within 25% of the best RMS, so the error is flat
@@ -179,7 +241,7 @@ level energy).
 
 ```
 ssopt/       the Python package (deck writer, runner, matching, surrogate, export, ...)
-slurm/       ion.slurm (tuning), full.slurm (full run + tables), sweep.sh (a list of ions)
+slurm/       ion.slurm (tuning), full.slurm (full run + tables), uncert.slurm (uncertainties), sweep.sh (a list of ions)
 docs/        this page
 tests/       python -m pytest tests/   (no data or structx needed; NIST Si I levels are in tests/fixtures)
 ref/         a reference deck and reference output used by the tests

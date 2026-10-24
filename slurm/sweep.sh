@@ -2,6 +2,7 @@
 # Run the pipeline for every ion in a list file (one spectroscopic name per line).
 #   bash slurm/sweep.sh ions_fe.txt                          # per ion: tune, then the full
 #                                                            # structx run (ssout.full, avalues.txt)
+#                                                            # and the uncertainties (uncert.txt)
 #   bash slurm/sweep.sh ions_fe.txt --core-bounds 0.8,1.6    # extra flags -> tune stages and full run
 # Runs `fetch` on this (login) node first so compute nodes never need internet.
 # Ions that already have work/<tag>/levels_orbital.txt are skipped (delete it to redo).
@@ -25,5 +26,9 @@ while IFS= read -r ION; do
   if [ ! -f "$WORKDIR/$TAG/ssout.full" ]; then
     DEP=""; [ -n "$J" ] && DEP="--dependency=afterok:$J"
     sbatch $DEP slurm/full.slurm "$ION" orbital best j "${EXTRA[@]}" | sed 's/^/   A-values: /'
+  fi
+  if [ ! -f "$WORKDIR/$TAG/uncert.txt" ]; then
+    DEP=""; [ -n "$J" ] && DEP="--dependency=afterok:$J"
+    sbatch $DEP slurm/uncert.slurm "$ION" "${EXTRA[@]}" | sed 's/^/   uncertainties: /'
   fi
 done < "$LIST"

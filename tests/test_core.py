@@ -198,3 +198,44 @@ def test_restart_switch_and_algebra_key():
     assert D.read_ssin(r)["configs"] == D.read_ssin(a)["configs"]
     term = [ln for ln in r.split("\n") if "-1" in ln[60:72]][0]
     assert term[:2] == " 4" and D.set_restart(r, 0) == a
+
+
+def test_uncertainty_pieces():
+    from ssopt import uncert as U
+    from ssopt.ssout import E1, Level
+    # NIST letter grades
+    assert U.grade(0.02) == "A+" and U.grade(0.08) == "B" and U.grade(0.6) == "E"
+    assert abs(U.frac(0.1) - (np.exp(0.1) - 1)) < 1e-12
+    # ensemble: only λ sets inside the 68% region of the energy fit, best first
+    h = History(["s", "p"], [(0.7, 2.0)] * 2, "orbital")
+    for i, r in enumerate([0.010, 0.0105, 0.011, 0.02, 0.05]):
+        h.samples.append(Sample([1.0 + 0.01 * i, 1.0], {}, r, 20, 1.0, True))
+    pool, fac = U.ensemble(h.samples, h.best(), n_fit=20)
+    assert pool[0].rms == 0.010 and all(s.rms <= fac * 0.010 for s in pool) and len(pool) == 2   # fac = 1.056
+    # levels are followed across runs by (parity, 2J, rank in energy)
+    lv = [Level(1, 1, 0, 2, 1, 0, 1, 0.0, 1), Level(2, 2, 0, 2, 1, 2, 1, 0.1, -1),
+          Level(3, 3, 0, 2, 0, 2, 1, 0.2, -1)]
+    assert U.level_keys(lv) == {1: (1, 0, 0), 2: (-1, 2, 0), 3: (-1, 2, 1)}
+    # s_LV: own |ln(L/V)| and the mean over lines within a factor 10 in S
+    e1 = [E1(2, 1, 1e9, 0.5, 0, 0, 1.0, 100.0, 0.5), E1(3, 1, 1e9, 0.5, 0, 0, -2.0, 90.0, 0.25)]   # SD carries a sign in ssout
+    t = U.lv_terms(e1)
+    assert t[(2, 1)][0] == 0.0 and abs(t[(3, 1)][0] - np.log(2)) < 1e-12
+    assert abs(t[(2, 1)][1] - np.log(2) / 2) < 1e-12
+    # spread over members
+    keys = U.level_keys(lv)
+    mem = [U.lines_by_key([E1(2, 1, a, 0.5, 0, 0, 1.0, 100.0, 0.5)], keys) for a in (1e9, 1.1e9, 0.9e9)]
+    c = U.components(e1[:1], keys, mem)
+    assert c[(2, 1)][3] == 3 and 0.05 < c[(2, 1)][0] < 0.15
+
+
+def test_holdout_check():
+    from ssopt import uncert as U
+    class L:  # minimal stand-in for a NIST level
+        def __init__(self, E):
+            self.E = E
+    nl = [L(0.1 * (i + 1)) for i in range(10)]
+    h = History(["s"], [(0.7, 2.0)], "l")
+    for lam, off in ((1.0, 0.02), (1.1, 0.005), (1.2, 0.01)):
+        h.samples.append(Sample([lam], {i: nl[i].E + off for i in range(10)}, off, 10, 1.0, True))
+    a, b, one, n = U.holdout(h, nl, "abs")
+    assert n == 10 and abs(a - 0.005) < 1e-12 and abs(b - 0.005) < 1e-12 and abs(one - 0.02) < 1e-12
