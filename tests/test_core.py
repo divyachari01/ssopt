@@ -249,3 +249,14 @@ def test_ci_generator_respects_full_core_shells():
         assert cfgs and all(occ <= cap(l) for c in cfgs for (n, l), occ in c.items())
     yb = generate_ci_configs(build_ion("Yb II"), 6, 3, 2, "complex")
     assert any(c.get((4, 3)) == 14 and c.get((6, 0)) == 1 for c in yb)     # 4f14 6s, the real ground
+
+
+def test_core_hole_levels_are_not_fit_targets():
+    # a NIST level with a hole in a core shell (2p5 over the 2p6 core of Mg I) must not count
+    # as reproducible by a deck that has no such configuration
+    ion = build_ion("Mg I")
+    deck = [parse_config_str("3s2"), parse_config_str("3s.3p"), parse_config_str("3s.4s")]
+    keys = M.deck_valence_keys(deck, ion.core)
+    assert M.valence_key(parse_config_str("2p6.3s2"), ion.core) in keys      # core written out in full
+    assert M.valence_key(parse_config_str("3s.4s"), ion.core) in keys
+    assert M.valence_key(parse_config_str("2p5.(2P*<3/2>).3s2.4s"), ion.core) not in keys

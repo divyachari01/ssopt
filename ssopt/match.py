@@ -48,10 +48,14 @@ class Match:
 
 
 def valence_key(cfg: dict, core: dict) -> tuple:
+    """Electrons outside the core. A core shell written with fewer electrons than the
+    core has (e.g. 2p5 over a 2p6 core) is kept as a negative entry, so a core-excited
+    NIST level only matches a deck configuration with the same hole. Core shells that
+    are left out of a configuration string are taken as full."""
     v = {}
     for o, occ in cfg.items():
         r = occ - core.get(o, 0)
-        if r > 0:
+        if r != 0:
             v[o] = r
     return config_key(v)
 
