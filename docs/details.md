@@ -149,11 +149,12 @@ for d λ values and N fitted levels, which is 1.04 to 1.3 times the best RMS for
 first stage (one λ per l) are points of the same orbital space and are included. At most 16 sets are used,
 spread evenly in RMS, and s_ens is the standard deviation of ln A over them. Levels are followed from one λ
 set to the next by parity, J and rank in energy, so where two levels cross their lines swap and the line gets
-a large spread.
+a large spread. This is the same idea as the Monte Carlo trials of Kramida (2014), who varied the fitted
+parameters of the Cowan code at random; here the variation comes from the λ sets that the fit itself leaves open.
 
 **The wavefunction.** The length and velocity forms of gf agree for an exact wavefunction, so
 s_LV = |ln(gf_L / gf_V)|. One line can agree by chance, so the mean of s_LV over the lines within a factor of
-10 in line strength is used as a floor, as in the MCDHF literature (Ekman et al. 2014, Kramida 2014).
+10 in line strength is used as a floor, as in the MCDHF literature (Ekman et al. 2014) and in Kramida (2024).
 
 **Combining.** σ = sqrt((a s_ens)² + (b s_LV)² + F²). The constants (a, b, F) in `ssopt/uncert.py` were
 fitted once against independent MCDHF and CI+MBPT calculations (the VizieR tables of the benchmark set, about

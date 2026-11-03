@@ -296,8 +296,9 @@ On a test set of 86 ions (the N- to P-like sequences up to Z = 28), the median
 RMS error of the matched levels is about 1%, and 74 of the 86 ions are within
 3%. The Al-, Si- and P-like ions are harder, at 1 to 4%, because an n ≤ 4 deck
 does not capture all of their correlation (Ni XV comes out at 3%). The method
-works best for ions with a charge of 3 or more, while neutral and near-neutral
-atoms have the largest outliers (Mg I is off by 24%).
+works best for ions with a charge of 3 or more. Neutral and near-neutral atoms
+also reach a few percent in energy, but their A-values are less reliable,
+because strongly mixed levels limit what a single model potential can do.
 
 On one 48-core node, tuning an ion takes 1 to 7 minutes and the full run takes
 a few seconds to 6 minutes. Each ion is its own job, so 119 ions, tuned and
@@ -318,11 +319,14 @@ Other atomic codes have also been tuned against observed levels with a learned
 model. Mendez et al. (2020) tune the atomic structure of neutral Be with a
 Bayesian method (a Tree-structured Parzen Estimator), for use in electron-impact
 collision calculations. Mendez (2021, PhD thesis) extends this with
-Gaussian-process Bayesian optimisation, and Mendez, Abdala and Mitnik (2026)
-apply it to the scaling parameters of AUTOSTRUCTURE for Be and Mg.
-Ferreira da Silva et al. (2025) use Bayesian optimisation to tune the Flexible
-Atomic Code for lanthanide and actinide ions, and Ma et al. (2024) use
-machine-learning models to correct the parameters of the Cowan code for
+Gaussian-process Bayesian optimisation (also Mendez & Mitnik 2023), and
+Mendez, Abdala and Mitnik (2026) apply it to the scaling parameters of the
+model potentials in AUTOSTRUCTURE for Be and Mg. Tuning model-potential
+scaling parameters against experiment with Bayesian optimisation is therefore
+not new in itself. Ferreira da Silva et al. (2025) use Bayesian optimisation to
+tune the Flexible Atomic Code for lanthanide and actinide ions, and Flörs et al.
+(2025) use it to produce lanthanide data for kilonova opacities. Ma et al.
+(2024) use machine-learning models to correct the parameters of the Cowan code for
 neutral ytterbium. Bilous, Cheung and Safronova (2024) use a neural network to
 choose the configurations for large CI calculations. AUTOSTRUCTURE can also
 adjust its λ internally (Badnell 2011). It does this by minimising an energy
@@ -341,11 +345,16 @@ the predicted energies. In machine learning this is known as target-vector
 Bayesian optimisation (Uhrenholt & Jensen 2019; Astudillo & Frazier 2019;
 Plock et al. 2022), and `ssopt` applies it to atomic structure. The labelling
 of strongly mixed levels is a known problem in other codes as well, and
-Gaigalas et al. (2017) treat it for GRASP.
+Gaigalas et al. (2017) treat it for GRASP. For the uncertainties, the spread
+of A-values over λ sets that fit the energies equally well follows the same
+idea as Kramida's (2014) Monte Carlo trials over the fitted parameters of the
+Cowan code, and the length/velocity indicator follows Ekman et al. (2014) and
+Kramida (2024).
 
-`ssopt` differs from the atomic work above in four ways. It tunes
-SUPERSTRUCTURE, and it builds the configuration list and the pairing with NIST
-levels from the NIST list itself, with no input per ion. It has also been run
+`ssopt` differs from the atomic work above in the following ways. It tunes
+SUPERSTRUCTURE, it models every level energy rather than a single error value,
+and it builds the configuration list and the pairing with NIST levels from the
+NIST list itself, with no input per ion. It has also been run
 on 119 ions across whole isoelectronic sequences, and it checks the results
 against NIST A-values, measured lifetimes and independent calculations, none of
 which are used in the tuning.
@@ -404,8 +413,12 @@ Related methods
 
 * R. Ferreira da Silva, A. Flörs, L. Leitão, J. P. Marques, J. M. Sampaio,
   G. Martínez-Pinedo, Systematic Bayesian Optimization for Atomic Structure
-  Calculations of Heavy Elements, arXiv:2502.13250 (2025),
-  https://arxiv.org/abs/2502.13250
+  Calculations of Heavy Elements, Phys. Rev. A 112, 012802 (2025),
+  https://doi.org/10.1103/PhysRevA.112.012802
+* A. Flörs, R. Ferreira da Silva, J. P. Marques, J. M. Sampaio,
+  G. Martínez-Pinedo, Calibrated Lanthanide Atomic Data for Kilonova Radiative
+  Transfer. I. Atomic Structure and Opacities, arXiv:2507.07785 (2025),
+  published in Phys. Rev. D, https://doi.org/10.1103/jxqw-7ynk
 * K. Ma, C. Yang, J. Zhang, Y. Li, G. Jiang, J. Chai, Machine Learning-Assisted
   Hartree-Fock Approach for Energy Level Calculations in the Neutral Ytterbium
   Atom, Entropy 26, 962 (2024), https://doi.org/10.3390/e26110962
@@ -415,6 +428,10 @@ Related methods
 * M. P. A. Mendez, Optimización de blancos atómicos y moleculares en procesos
   colisionales, PhD thesis, Universidad de Buenos Aires (2021),
   https://bibliotecadigital.exactas.uba.ar/download/tesis/tesis_n6803_Mendez.pdf
+* A. M. Mendez, D. M. Mitnik, Bayesian optimization in atomic structure
+  calculations for collisional problems, 76th Annual Gaseous Electronics
+  Conference, abstract IT4.00001 (2023),
+  https://meetings-archive.aps.org/gec/2023/it4/1/
 * A. Mendez, M. Abdala, D. M. Mitnik, Bayesian optimization of atomic
   structure for collisional calculations, Proceedings of the 1st International
   Online Conference on Atoms (MDPI, 2026), https://sciforum.net/paper/28531
@@ -430,6 +447,15 @@ Related methods
 * M. Plock, K. Andrle, S. Burger, P.-I. Schneider, Bayesian target-vector
   optimization for efficient parameter reconstruction, Adv. Theory Simul. 5,
   2200112 (2022), https://doi.org/10.1002/adts.202200112
+* A. Kramida, Assessing uncertainties of theoretical atomic transition
+  probabilities with Monte Carlo random trials, Atoms 2, 86 (2014),
+  https://doi.org/10.3390/atoms2020086
+* A. Kramida, Evaluation of uncertainties in atomic data on spectral lines and
+  transition probabilities, Eur. Phys. J. D 78, 36 (2024),
+  https://doi.org/10.1140/epjd/s10053-024-00820-y
+* J. Ekman, M. R. Godefroid, H. Hartman, Validation and implementation of
+  uncertainty estimates of calculated transition rates, Atoms 2, 215 (2014),
+  https://doi.org/10.3390/atoms2020215
 * G. Gaigalas, C. Froese Fischer, P. Rynkun, P. Jönsson, JJ2LSJ transformation
   and unique labeling for energy levels, Atoms 5, 6 (2017),
   https://doi.org/10.3390/atoms5010006
