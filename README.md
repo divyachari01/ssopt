@@ -2,6 +2,21 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23380595.svg)](https://doi.org/10.5281/zenodo.23380595)
 
+```
+                              ssopt
+      Automated λ tuning for the SUPERSTRUCTURE atomic structure code
+                            by D. Chari
+          (Linux; Python 3 and a Fortran compiler; SLURM scripts included)
+
+            Department of Physics, The Ohio State University
+                          Columbus, OH, USA
+                    e-mail: chari.16 @ osu.edu
+
+           Archived on Zenodo: https://doi.org/10.5281/zenodo.23380595
+
+           Version 0.8.0, release date: October 25, 2026
+```
+
 `ssopt` tunes the scaling parameters λ of the atomic structure code
 SUPERSTRUCTURE against the observed energy levels in NIST, and then checks the
 results against data that is not used in the tuning: NIST A-values, measured
